@@ -20,4 +20,8 @@ The version is one number. If the user did not name the next one, raise the patc
 3. Rebuild with `powershell -File scripts/package-windows.ps1`. The setup file is `dist-setup/idk-Setup-<version>.exe`. The script also copies it to `website/download/idk-Setup.exe`.
 4. Never commit `.env` or `billing.env`. The installer must not contain them.
 5. Do not print tokens or license secrets from `.env`.
-6. Push or deploy only when this project already has that remote or site and the user asked to publish.
+6. When the user says commit, commit and update, or update the latest changes, that request includes GitHub. Push `main` to `https://github.com/Delexoo/idk` in the same turn as the commit. Do not stop after a local commit. Use `GITHUB_TOKEN` from `D:\MasterVault\idk\.env` and do not print the token. If git reports dubious ownership, pass `-c safe.directory=D:/MasterVault/idk`. Do not change git config.
+7. Run `node scripts/render-release-notes.mjs` so `website/releases.html` lists every version in `brain/log.json`. Each version keeps its own added and fixes lines. Do not skip a version and do not merge several versions into one note.
+8. Run `node scripts/post-release-notes.mjs` with `GITHUB_TOKEN` from `.env`. It creates or updates a GitHub release for every version in the log, and the body is that version's notes. Do not print the token.
+9. Deploy the `website` folder to the Vercel project `idk` on team `trymoonrises-projects` with `node scripts/deploy-site.mjs`. It uses `VERCEL_TOKEN` from `.env`. Do not print the token. `website/.vercel` stays uncommitted. The live site is `https://idk-trymoonrises-projects.vercel.app`.
+10. Stop when `https://idk-trymoonrises-projects.vercel.app/releases.html` includes the current version.

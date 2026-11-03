@@ -27,7 +27,9 @@ public static class OpenRouterService
         "Reply with only the final answer the user should read — no planning, strategy, reasoning steps, outlines, or meta commentary. " +
         "Never write lines like \"Strategy:\", \"Plan:\", \"Approach:\", \"Thinking:\", or \"Let me think\". Do not describe what the user did or that they highlighted text. " +
         "Begin immediately with the answer (definition, explanation, or example). Be clear and concise; use bullets only when they help. " +
-        "Add about 1–2 emojis naturally when it fits. If a screenshot is attached, use it with the quoted text for context.";
+        "Add about 1–2 emojis naturally when it fits. " +
+        "An attached image is silent background. Never mention a screenshot, never say what the user shared, and never describe the picture. " +
+        "If the question is only a greeting or is unclear, explain the quoted text in a short reply.";
 
     public static bool IsReady => SealedApi.IsReady;
 

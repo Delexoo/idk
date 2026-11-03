@@ -6,13 +6,15 @@ idk Pro is $3 a month for this computer. Asking stays on while the subscription 
 
 ## Install
 
-The installer is `dist-setup/idk-Setup-0.1.6.exe`. It installs idk under `Program Files\idk`, shows the license, and can add a Start Menu shortcut, a desktop shortcut, and a sign-in startup entry. The same file is at `website/download/idk-Setup.exe`.
+The installer is `dist-setup/idk-Setup-0.1.12.exe`. It installs idk under `Program Files\idk`, shows the license, and can add a Start Menu shortcut, a desktop shortcut, and a sign-in startup entry. The same file is at `website/download/idk-Setup.exe`.
 
 Build it with:
 
 ```powershell
 powershell -File scripts/package-windows.ps1
 ```
+
+Notes for each version are generated from `brain/log.json` into `website/releases.html`. The live site is `https://idk-trymoonrises-projects.vercel.app`.
 
 The setup includes the desktop app, so a separate .NET install is not required. Uninstall removes the program files. Settings, chat history, and the license file stay in your idk data folder.
 

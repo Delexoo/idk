@@ -30,9 +30,9 @@
             <Setter Property="FontFamily" Value="{StaticResource IdkFontBody}" />
             <Setter Property="FontSize" Value="11" />
             <Setter Property="FontWeight" Value="Normal" />
-            <Setter Property="Padding" Value="10,6" />
-            <Setter Property="Margin" Value="0,0,8,0" />
-            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="MinHeight" Value="22" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="Template">
@@ -49,11 +49,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#2E2E2E" />
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#4A4A4A" />
+                                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource OverlayBtnHoverBg}" />
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource OverlayBtnHoverBorder}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#242424" />
+                                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource OverlayBtnPressedBg}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.4" />
@@ -65,9 +65,9 @@
         </Style>
 
         <Style x:Key="OverlayCardGhost" TargetType="Button" BasedOn="{StaticResource OverlayToolbarBtnBase}">
-            <Setter Property="Background" Value="#252525" />
-            <Setter Property="Foreground" Value="#E8E8E8" />
-            <Setter Property="BorderBrush" Value="#3D3D3D" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource OverlayQueryPlaceholder}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
         </Style>
 
         <Style x:Key="OverlayQueryFocusVisual" TargetType="Control">
@@ -105,8 +105,8 @@
         </Style>
 
         <Style x:Key="OverlayExitIcon" TargetType="Button">
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="28" />
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="24" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
@@ -125,11 +125,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bg" Property="Background" Value="#2A2A2A" />
-                                <Setter TargetName="Bg" Property="BorderBrush" Value="#3D3D3D" />
+                                <Setter TargetName="Bg" Property="Background" Value="{DynamicResource OverlayExitHoverBg}" />
+                                <Setter TargetName="Bg" Property="BorderBrush" Value="{DynamicResource OverlayExitHoverBorder}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bg" Property="Background" Value="#222222" />
+                                <Setter TargetName="Bg" Property="Background" Value="{DynamicResource OverlayExitPressedBg}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -154,7 +154,7 @@
                 SnapsToDevicePixels="True"
                 UseLayoutRounding="True" />
         <Border x:Name="ShellOuter"
-            ClipToBounds="True"
+            ClipToBounds="False"
             CornerRadius="16"
             Background="#181818"
             BorderBrush="Transparent"
@@ -162,7 +162,7 @@
             SnapsToDevicePixels="True"
             IsHitTestVisible="True"
             UseLayoutRounding="True">
-        <Grid>
+        <Grid x:Name="ShellContent">
             <Grid x:Name="PillPanel"
                   Margin="10,0,4,0"
                   Background="Transparent"
@@ -225,15 +225,29 @@
                 </Grid.RowDefinitions>
                 <Border x:Name="CardHeaderBar"
                         Grid.Row="0"
-                        Padding="10,8,10,8"
-                        BorderBrush="#333333"
+                        Padding="14,10,6,8"
+                        BorderBrush="{DynamicResource OverlayCardDivider}"
                         BorderThickness="0,0,0,1"
                         Background="Transparent"
                         PreviewMouseLeftButtonDown="CardHeader_PreviewMouseLeftButtonDown">
-                    <DockPanel LastChildFill="True">
-                        <StackPanel DockPanel.Dock="Right"
+                    <Grid MinHeight="28">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="SelectionPreview"
+                                   Grid.Column="0"
+                                   Margin="0,0,8,0"
+                                   VerticalAlignment="Center"
+                                   FontFamily="{StaticResource IdkFontBody}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource OverlaySelectionPreview}"
+                                   TextWrapping="NoWrap"
+                                   TextTrimming="CharacterEllipsis"
+                                   IsHitTestVisible="False" />
+                        <StackPanel Grid.Column="1"
                                     Orientation="Horizontal"
-                                    HorizontalAlignment="Right"
                                     VerticalAlignment="Center">
                             <Button x:Name="BtnSimpler"
                                     Content="Simpler"
@@ -245,21 +259,21 @@
                                     ToolTip="Close"
                                     AutomationProperties.Name="Close">
                                 <Path Data="M5,5 L11,11 M11,5 L5,11"
-                                      Stroke="#B0B0B0"
+                                      Stroke="{DynamicResource OverlayExitStroke}"
                                       StrokeThickness="1.25"
                                       StrokeStartLineCap="Round"
                                       StrokeEndLineCap="Round"
-                                      Width="11"
-                                      Height="11"
+                                      Width="10"
+                                      Height="10"
                                       Stretch="Uniform" />
                             </Button>
                         </StackPanel>
-                    </DockPanel>
+                    </Grid>
                 </Border>
                 <ScrollViewer x:Name="AnswerScroll"
                               Grid.Row="1"
                               VerticalScrollBarVisibility="Auto"
-                              Padding="12,10,12,12"
+                              Padding="10,8,10,8"
                               Background="Transparent"
                               PreviewMouseWheel="AnswerScroll_OnPreviewMouseWheel">
                     <StackPanel>
@@ -315,22 +329,25 @@
                 </ScrollViewer>
                 <Border x:Name="CardFollowUpBar"
                         Grid.Row="2"
-                        Padding="10,7,10,9"
-                        BorderBrush="#333333"
-                        BorderThickness="0,1,0,0"
-                        Background="#1A1A1A">
-                    <Grid MinHeight="28">
+                        Margin="12,4,12,14"
+                        Padding="12,0"
+                        MinHeight="36"
+                        CornerRadius="12"
+                        BorderBrush="{DynamicResource OverlayCardDivider}"
+                        BorderThickness="1"
+                        Background="{DynamicResource OverlayAssistantBg}">
+                    <Grid>
                         <TextBlock x:Name="FollowUpPlaceholder"
                                    Text="Ask a follow-up…"
                                    VerticalAlignment="Center"
-                                   FontSize="12"
-                                   Foreground="#6E6E6E"
+                                   FontSize="13"
+                                   Foreground="{DynamicResource OverlayFollowUpPlaceholder}"
                                    IsHitTestVisible="False" />
                         <TextBox x:Name="FollowUpBox"
                                  Style="{StaticResource OverlayQueryTextBox}"
-                                 FontSize="12"
+                                 FontSize="13"
                                  VerticalContentAlignment="Center"
-                                 Foreground="#ECECEC"
+                                 Foreground="{DynamicResource OverlayQueryText}"
                                  IsEnabled="False"
                                  TextChanged="FollowUpBox_TextChanged"
                                  GotFocus="FollowUpBox_GotFocus"

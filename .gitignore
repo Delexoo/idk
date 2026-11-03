@@ -7,4 +7,5 @@ launchSettings.json
 .env
 billing.env
 dist-setup/
+website/.vercel
 Idk/Services/EmbeddedOpenRouter.g.cs

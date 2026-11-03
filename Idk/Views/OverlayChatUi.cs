@@ -13,38 +13,31 @@ internal static class OverlayChatUi
     public const string TagUser = "user";
     public const string TagAssistant = "assistant";
 
-    private static readonly SolidColorBrush UserBg = Freeze(0x25, 0x63, 0xEB);
-    private static readonly SolidColorBrush AssistantBg = Freeze(0x14, 0x14, 0x13);
-    private static readonly SolidColorBrush AssistantBorder = Freeze(0x2E, 0x2E, 0x2C);
-    private static readonly SolidColorBrush AssistantInk = Freeze(0xDC, 0xDC, 0xDC);
-    private static readonly SolidColorBrush LabelMuted = Freeze(0x73, 0x73, 0x73);
-    private static readonly SolidColorBrush DotFill = Freeze(0x8E, 0x8E, 0x8E);
-
     public static UIElement CreateUserBubble(string text)
     {
         var body = new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,
-            FontSize = 13,
-            Foreground = System.Windows.Media.Brushes.White,
-            LineHeight = 20
+            FontSize = 12.5,
+            LineHeight = 17
         };
+        body.SetResourceReference(TextBlock.ForegroundProperty, "DashOnAccent");
         AppTypography.ApplyBody(body);
         EmojiTextHelper.AppendRuns(body.Inlines, text);
 
         var bubble = new Border
         {
-            Background = UserBg,
-            CornerRadius = new CornerRadius(14, 14, 3, 14),
-            Padding = new Thickness(11, 8, 11, 8),
-            MaxWidth = 220,
+            CornerRadius = new CornerRadius(12, 12, 3, 12),
+            Padding = new Thickness(9, 5, 9, 5),
+            MaxWidth = 240,
             HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
             Child = body
         };
+        bubble.SetResourceReference(Border.BackgroundProperty, "DashAccentBlue");
 
         var row = new Grid
         {
-            Margin = new Thickness(28, 0, 0, 10),
+            Margin = new Thickness(18, 0, 0, 6),
             HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
             Tag = TagUser
         };
@@ -64,10 +57,10 @@ internal static class OverlayChatUi
             body = new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap,
-                FontSize = 13,
-                Foreground = AssistantInk,
-                LineHeight = 20
+                FontSize = 12.5,
+                LineHeight = 17
             };
+            body.SetResourceReference(TextBlock.ForegroundProperty, "OverlayAssistantInk");
             if (!string.IsNullOrWhiteSpace(text))
                 MarkdownAnswerFormatter.ApplyDisplayMarkdown(body, text);
             else
@@ -77,23 +70,22 @@ internal static class OverlayChatUi
 
         var bubble = new Border
         {
-            Background = AssistantBg,
-            BorderBrush = AssistantBorder,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(3, 14, 14, 14),
-            Padding = new Thickness(12, 10, 12, 10),
-            MinHeight = streaming && body == null ? 36 : 0,
-            MaxWidth = 248,
+            CornerRadius = new CornerRadius(3, 12, 12, 12),
+            Padding = new Thickness(9, 6, 9, 6),
+            MinHeight = streaming && body == null ? 28 : 0,
+            MaxWidth = 260,
             Child = bubbleContent
         };
+        bubble.SetResourceReference(Border.BackgroundProperty, "OverlayAssistantBg");
+        bubble.SetResourceReference(Border.BorderBrushProperty, "OverlayAssistantBorder");
 
         var avatar = new Border
         {
-            Width = 26,
-            Height = 26,
-            CornerRadius = new CornerRadius(13),
+            Width = 18,
+            Height = 18,
+            CornerRadius = new CornerRadius(9),
             ClipToBounds = true,
-            BorderBrush = AssistantBorder,
             BorderThickness = new Thickness(1),
             VerticalAlignment = VerticalAlignment.Top,
             Background = new ImageBrush
@@ -102,6 +94,7 @@ internal static class OverlayChatUi
                 Stretch = Stretch.UniformToFill
             }
         };
+        avatar.SetResourceReference(Border.BorderBrushProperty, "OverlayAssistantBorder");
 
         var label = new TextBlock
         {
@@ -109,9 +102,9 @@ internal static class OverlayChatUi
             FontFamily = AppTypography.Display,
             FontSize = 10,
             FontWeight = FontWeights.SemiBold,
-            Foreground = LabelMuted,
-            Margin = new Thickness(0, 0, 0, 5)
+            Margin = new Thickness(0, 0, 0, 3)
         };
+        label.SetResourceReference(TextBlock.ForegroundProperty, "OverlayLabelMuted");
 
         var col = new StackPanel();
         col.Children.Add(label);
@@ -119,14 +112,14 @@ internal static class OverlayChatUi
 
         var row = new Grid
         {
-            Margin = new Thickness(0, 0, 0, 12),
+            Margin = new Thickness(0, 0, 0, 8),
             Tag = TagAssistant
         };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         Grid.SetColumn(avatar, 0);
         Grid.SetColumn(col, 1);
-        avatar.Margin = new Thickness(0, 2, 8, 0);
+        avatar.Margin = new Thickness(0, 1, 6, 0);
         row.Children.Add(avatar);
         row.Children.Add(col);
 
@@ -138,23 +131,17 @@ internal static class OverlayChatUi
         var panel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
         for (var i = 0; i < 3; i++)
         {
-            panel.Children.Add(new Ellipse
+            var dot = new Ellipse
             {
-                Width = 6,
-                Height = 6,
-                Margin = new Thickness(i == 0 ? 0 : 5, 0, 0, 0),
-                Fill = DotFill,
+                Width = 5,
+                Height = 5,
+                Margin = new Thickness(i == 0 ? 0 : 4, 0, 0, 0),
                 Opacity = i == 0 ? 1.0 : 0.35
-            });
+            };
+            dot.SetResourceReference(Shape.FillProperty, "OverlayTypingDot");
+            panel.Children.Add(dot);
         }
 
         return panel;
-    }
-
-    private static SolidColorBrush Freeze(byte r, byte g, byte b)
-    {
-        var brush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(r, g, b));
-        brush.Freeze();
-        return brush;
     }
 }

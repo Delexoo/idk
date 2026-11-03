@@ -1,0 +1,240 @@
+{
+  "repo": "Delexoo/idk",
+  "updates": [
+    {
+      "version": "0.1.11",
+      "date": "2026-11-02",
+      "title": "Simpler dashboard",
+      "tag": "v0.1.11",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.11",
+      "sections": [
+        {
+          "heading": "Dashboard",
+          "added": [
+            "The home page is a title, one status line, and the chat list, and the other pages use plain rows."
+          ]
+        },
+        {
+          "heading": "Site",
+          "added": [
+            "The site lists what changed in every version."
+          ]
+        },
+        {
+          "heading": "Overlay",
+          "added": [
+            "With the search bar locked at the bottom center, the answer card stays there."
+          ],
+          "fixes": [
+            "The answer card bottom corners are rounded.",
+            "An ask answers the selected text instead of describing the screenshot."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.9",
+      "date": "2026-11-02",
+      "title": "Button hover fills the control",
+      "tag": "v0.1.9",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.9",
+      "sections": [
+        {
+          "heading": "Dashboard",
+          "fixes": [
+            "Hover tint covers the whole button."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.8",
+      "date": "2026-11-02",
+      "title": "Slimmer answer card",
+      "tag": "v0.1.8",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.8",
+      "sections": [
+        {
+          "heading": "Overlay",
+          "added": [
+            "The answer card is slimmer and shows the highlighted text as a small raised preview."
+          ]
+        },
+        {
+          "heading": "Chat",
+          "added": [
+            "A saved chat shows the highlighted text as a small raised preview."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.7",
+      "date": "2026-11-02",
+      "title": "Checkout confirmation",
+      "tag": "v0.1.7",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.7",
+      "sections": [
+        {
+          "heading": "Dashboard",
+          "added": [
+            "After checkout, a short confirmation says this computer is subscribed.",
+            "Send feedback is gone from the dashboard."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.6",
+      "date": "2026-11-02",
+      "title": "Promo codes stay on Stripe",
+      "tag": "v0.1.6",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.6",
+      "sections": [
+        {
+          "heading": "Dashboard",
+          "added": [
+            "A promotional code is entered on the Stripe checkout screen."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.5",
+      "date": "2026-11-02",
+      "title": "Five free asks, then Billing",
+      "tag": "v0.1.5",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.5",
+      "sections": [
+        {
+          "heading": "Dashboard",
+          "added": [
+            "Billing shows how many free asks are left and upgrades this computer to idk Pro."
+          ]
+        },
+        {
+          "heading": "Overlay",
+          "added": [
+            "The first 5 asks are free. After that, Upgrade opens Billing."
+          ],
+          "fixes": [
+            "An ask still answers when the screenshot model is unavailable."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.4",
+      "date": "2026-11-02",
+      "title": "The ask bar is a smooth capsule",
+      "tag": "v0.1.4",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.4",
+      "sections": [
+        {
+          "heading": "Overlay",
+          "fixes": [
+            "The ask bar is a smooth capsule, with sharp text and rounded ends."
+          ]
+        },
+        {
+          "heading": "Dashboard",
+          "added": [
+            "Settings sells idk Pro for $3 a month, and asking stays on while that subscription is active."
+          ]
+        },
+        {
+          "heading": "Site",
+          "added": [
+            "The site lists idk Pro at $3 a month."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.3",
+      "date": "2026-11-02",
+      "title": "Dashboard responds to the pointer",
+      "tag": "v0.1.3",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.3",
+      "sections": [
+        {
+          "heading": "Dashboard",
+          "added": [
+            "Sidebar, buttons, switches, rows, and cards light up and press in when you hover or click.",
+            "Settings lets the search bar follow the cursor, or locks the mini search bar at the bottom center of the screen.",
+            "How to use includes a short paragraph you can highlight to try the ask bar.",
+            "Settings can keep idk off screenshots, screen shares, and streams."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.2",
+      "date": "2026-11-02",
+      "title": "Selection opens the ask bar",
+      "tag": "v0.1.2",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.2",
+      "sections": [
+        {
+          "heading": "Overlay",
+          "fixes": [
+            "Selecting text in an editor or browser opens the ask bar, and the bar stays up after it takes focus.",
+            "Shift + select opens the ask bar when Shift was held during the drag."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.1",
+      "date": "2026-11-02",
+      "title": "Model access is built in",
+      "tag": "v0.1.1",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.1",
+      "sections": [
+        {
+          "heading": "Dashboard",
+          "added": [
+            "Settings no longer asks for an API key. Model access is built into idk."
+          ],
+          "fixes": [
+            "Dashboard buttons and chat rows open again. A font helper was stopping the click."
+          ]
+        },
+        {
+          "heading": "Chat",
+          "added": [
+            "Questions use the sealed model key. That key is not saved in settings and is not shown on screen."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.0",
+      "date": "2026-11-02",
+      "title": "A license for this computer",
+      "tag": "v0.1.0",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.0",
+      "sections": [
+        {
+          "heading": "Setup",
+          "added": [
+            "idk installs from a Windows setup file and shows the license before setup finishes.",
+            "A license is $5.99 once for this computer. Copying the app or the license file does not unlock another computer."
+          ]
+        },
+        {
+          "heading": "Dashboard",
+          "added": [
+            "Settings can buy a license for this computer and shows when this computer is already paid."
+          ]
+        },
+        {
+          "heading": "Chat",
+          "added": [
+            "Asking waits until this computer is licensed."
+          ]
+        }
+      ]
+    }
+  ]
+}

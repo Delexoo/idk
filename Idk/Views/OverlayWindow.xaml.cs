@@ -22,11 +22,11 @@ public partial class OverlayWindow : Window
     private const double PillMinW = 128;
     private const double PillMinH = 32;
     private const double PillCornerRadius = 16;
-    private const double CardCornerRadius = 10;
-    private const double CardW = 312;
-    private const double CardH = 336;
-    private const double CardMinW = 236;
-    private const double CardMinH = 188;
+    private const double CardCornerRadius = 18;
+    private const double CardW = 320;
+    private const double CardH = 340;
+    private const double CardMinW = 220;
+    private const double CardMinH = 168;
 
     private string _selectionText = "";
     private Rect _selectionBoundsPhysical;
@@ -86,7 +86,12 @@ public partial class OverlayWindow : Window
         AddHandler(Keyboard.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler(OnKeyboardFocusChanged), true);
         AddHandler(Keyboard.LostKeyboardFocusEvent, new KeyboardFocusChangedEventHandler(OnKeyboardFocusChanged), true);
         ShellOuter.SizeChanged += (_, _) => SyncShellChromeShape();
-        SizeChanged += (_, _) => SyncShellChromeShape();
+        SizeChanged += (_, _) =>
+        {
+            SyncShellChromeShape();
+            if (IsVisible && SettingsStore.AskBarPlacement == AskBarPlacementMode.BottomCenter)
+                PositionBottomCenter();
+        };
         DpiChanged += (_, _) => SyncShellChromeShape();
         ThemeManager.ThemeChanged += OnAppThemeChanged;
     }
@@ -138,7 +143,7 @@ public partial class OverlayWindow : Window
         FollowUpPlaceholder.Foreground = ThemeManager.Brush("OverlayFollowUpPlaceholder");
         ErrorText.Foreground = ThemeManager.Brush("OverlayErrorFg");
 
-        CardFollowUpBar.Background = ThemeManager.Brush("OverlayCardFooterBg");
+        CardFollowUpBar.Background = ThemeManager.Brush("OverlayAssistantBg");
         CardFollowUpBar.BorderBrush = ThemeManager.Brush("OverlayCardDivider");
         CardHeaderBar.BorderBrush = ThemeManager.Brush("OverlayCardDivider");
 
@@ -199,8 +204,27 @@ public partial class OverlayWindow : Window
         ShellOuter.Clip = null;
         ShellVisualRoot.Clip = null;
         RootContentGrid.Clip = null;
+        ApplyContentClip();
         if (syncNativeRegion)
-            ClearNativeWindowRegion();
+            ApplyNativeWindowShape();
+    }
+
+    /// <summary>
+    /// Child backgrounds are rectangles. Clip them to the shell curve so the bottom corners stay round.
+    /// The shell border itself is not clipped, so the edge stays smooth.
+    /// </summary>
+    private void ApplyContentClip()
+    {
+        var w = ShellOuter.ActualWidth;
+        var h = ShellOuter.ActualHeight;
+        if (w < 2 || h < 2)
+        {
+            ShellContent.Clip = null;
+            return;
+        }
+
+        var radius = Math.Max(0, ShellOuter.CornerRadius.TopLeft);
+        ShellContent.Clip = new RectangleGeometry(new Rect(0, 0, w, h), radius, radius);
     }
 
     private const int WmNcHitTest = 0x0084;
@@ -208,6 +232,12 @@ public partial class OverlayWindow : Window
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
+
+    [DllImport("gdi32.dll")]
+    private static extern IntPtr CreateRoundRectRgn(int left, int top, int right, int bottom, int widthEllipse, int heightEllipse);
+
+    [DllImport("gdi32.dll")]
+    private static extern bool DeleteObject(IntPtr hObject);
 
     /// <summary>
     /// Corners outside the capsule stay transparent and click through. The curve itself is drawn by WPF.
@@ -251,6 +281,40 @@ public partial class OverlayWindow : Window
         var hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
             SetWindowRgn(hwnd, IntPtr.Zero, true);
+    }
+
+    /// <summary>
+    /// Follow-the-cursor keeps a transparent window so the curve can antialias.
+    /// Parked at the bottom, that same window paints a white rectangle in the corners.
+    /// A capsule region clips the plate off so the ends stay round.
+    /// </summary>
+    private void ApplyNativeWindowShape()
+    {
+        if (SettingsStore.AskBarPlacement != AskBarPlacementMode.BottomCenter)
+        {
+            ClearNativeWindowRegion();
+            return;
+        }
+
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero) return;
+
+        WindowsRoundedWindowCorners.TryDoNotRound(this, suppressDwmBorder: true);
+
+        var (sx, sy) = DeviceScale();
+        var w = ActualWidth > 1 ? ActualWidth : Width;
+        var h = ActualHeight > 1 ? ActualHeight : Height;
+        if (w < 1 || h < 1) return;
+
+        var pw = Math.Max(1, (int)Math.Round(w * sx));
+        var ph = Math.Max(1, (int)Math.Round(h * sy));
+        var radiusDip = Math.Min(ShellOuter.CornerRadius.TopLeft, Math.Min(w, h) / 2);
+        var dia = Math.Max(1, (int)Math.Round(radiusDip * 2 * Math.Min(sx, sy)));
+        dia = Math.Min(dia, Math.Min(pw, ph));
+        var rgn = CreateRoundRectRgn(0, 0, pw + 1, ph + 1, dia, dia);
+        if (rgn == IntPtr.Zero) return;
+        if (SetWindowRgn(hwnd, rgn, true) == 0)
+            DeleteObject(rgn);
     }
 
     private (double X, double Y) DeviceScale()
@@ -355,14 +419,23 @@ public partial class OverlayWindow : Window
     /// <summary>Mini ask bar: follow the pointer, or stay locked at the bottom center of that screen.</summary>
     private void ApplyAskBarPlacement()
     {
-        if (!IsVisible || _hasMorphedToCard) return;
+        if (!IsVisible) return;
 
         if (SettingsStore.AskBarPlacement == AskBarPlacementMode.BottomCenter)
         {
             StopMouseFollow();
             PositionBottomCenter();
+            ApplyNativeWindowShape();
             return;
         }
+
+        if (_hasMorphedToCard)
+        {
+            ApplyNativeWindowShape();
+            return;
+        }
+
+        ApplyNativeWindowShape();
 
         PositionFollowMouse();
         if (_followRenderingHandler == null)
@@ -371,10 +444,10 @@ public partial class OverlayWindow : Window
 
     private void PositionBottomCenter()
     {
-        if (_hasMorphedToCard || !IsVisible) return;
+        if (!IsVisible) return;
 
-        var w = ActualWidth > 1 ? ActualWidth : PillW;
-        var h = ActualHeight > 1 ? ActualHeight : PillH;
+        var w = ActualWidth > 1 ? ActualWidth : (_hasMorphedToCard ? CardW : PillW);
+        var h = ActualHeight > 1 ? ActualHeight : (_hasMorphedToCard ? CardH : PillH);
         void Place()
         {
             MouseFollowPillLayout.PlaceAtBottomCenter(
@@ -521,6 +594,7 @@ public partial class OverlayWindow : Window
         SnapToPillLayout();
         QueryBox.Clear();
         ClearCardChat();
+        SyncSelectionPreview();
         ErrorText.Visibility = Visibility.Collapsed;
         SyncQueryPlaceholder();
         UpdatePlaceholderVisibility();
@@ -548,11 +622,12 @@ public partial class OverlayWindow : Window
         WindowChrome.SetWindowChrome(this, new WindowChrome
         {
             CaptionHeight = 0,
-            ResizeBorderThickness = new Thickness(8),
+            ResizeBorderThickness = new Thickness(0),
             GlassFrameThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(CardCornerRadius),
             UseAeroCaptionButtons = false
         });
-        ResizeMode = ResizeMode.CanResize;
+        ResizeMode = ResizeMode.NoResize;
     }
 
     private void ScheduleFocusQueryBox()
@@ -727,6 +802,7 @@ public partial class OverlayWindow : Window
         ResetHistoryTurn();
         _selectionSourceElement = null;
         _selectionText = "";
+        SyncSelectionPreview();
         _lastUserMessage = "";
         _lastAnswer = "";
         QueryBox.Clear();
@@ -900,7 +976,10 @@ public partial class OverlayWindow : Window
         ApplyCardWindowChrome();
         SyncShellChromeShape();
         UpdateLayout();
-        PositionNearSourceSelection();
+        if (SettingsStore.AskBarPlacement == AskBarPlacementMode.BottomCenter)
+            PositionBottomCenter();
+        else
+            PositionNearSourceSelection();
         UpdateGlassChrome();
         SyncShellChromeShape();
         StartSelectionWatch();
@@ -935,7 +1014,17 @@ public partial class OverlayWindow : Window
 
             string? b64 = null;
             if (captureVision)
-                b64 = await Task.Run(() => ScreenCaptureService.CapturePrimaryAsBase64Png(), ct);
+            {
+                ScreenShareVisibility.ForceExcludeAll();
+                try
+                {
+                    b64 = await Task.Run(() => ScreenCaptureService.CapturePrimaryAsBase64Png(), ct);
+                }
+                finally
+                {
+                    ScreenShareVisibility.ApplyAll();
+                }
+            }
 
             _lastAnswer = "";
             await foreach (var delta in OpenRouterService.StreamChatAsync(userMessage, b64, ct))
@@ -1010,6 +1099,16 @@ public partial class OverlayWindow : Window
     }
 
     private void OnExitClick(object sender, RoutedEventArgs e) => EscapeOrDismiss();
+
+    private void SyncSelectionPreview()
+    {
+        var preview = SelectionSnippetFormatter.ToPreview(_selectionText, 120);
+        SelectionPreview.Text = preview;
+        SelectionPreview.ToolTip = string.IsNullOrEmpty(preview)
+            ? null
+            : SelectionSnippetFormatter.ToPreview(_selectionText, 480);
+        SelectionPreview.Visibility = string.IsNullOrEmpty(preview) ? Visibility.Collapsed : Visibility.Visible;
+    }
 
     private void ClearCardChat()
     {
@@ -1116,6 +1215,7 @@ public partial class OverlayWindow : Window
     private void CardHeader_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (!_hasMorphedToCard || e.LeftButton != MouseButtonState.Pressed) return;
+        if (SettingsStore.AskBarPlacement == AskBarPlacementMode.BottomCenter) return;
         if (e.OriginalSource is not DependencyObject d) return;
         for (var n = d; n != null; n = VisualTreeHelper.GetParent(n))
         {

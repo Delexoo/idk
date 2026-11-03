@@ -69,14 +69,12 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         var onDashboard = ScrollDashboard.Visibility == Visibility.Visible;
         var onSettings = ScrollSettings.Visibility == Visibility.Visible;
         var onHowToUse = ScrollHowToUse.Visibility == Visibility.Visible;
-        var onFeedback = ScrollFeedback.Visibility == Visibility.Visible;
         var onChat = ScrollChatDetail.Visibility == Visibility.Visible;
 
         SetSidebarNav(
             dashboardActive: onDashboard,
             settingsActive: onSettings,
-            howToUseActive: onHowToUse,
-            feedbackActive: onFeedback);
+            howToUseActive: onHowToUse);
 
         if (onDashboard)
         {
@@ -89,10 +87,6 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         else if (onHowToUse)
         {
             SyncHowToUseBody();
-        }
-        else if (onFeedback)
-        {
-            /* Feedback uses DynamicResource brushes in XAML. */
         }
         else if (onChat && _detailRow != null)
         {
@@ -191,36 +185,6 @@ public partial class DashboardView : System.Windows.Controls.UserControl
     }
 
     private void HowToUseNav_Click(object sender, RoutedEventArgs e) => ShowHowToUseView();
-
-    private void FeedbackNav_Click(object sender, RoutedEventArgs e) => ShowFeedbackView();
-
-    private void FeedbackSend_Click(object sender, RoutedEventArgs e)
-    {
-        const int minLen = 8;
-        var text = FeedbackInput.Text.Trim();
-        if (text.Length < minLen)
-        {
-            FeedbackStatus.Text = $"Please write at least {minLen} characters.";
-            FeedbackStatus.Foreground = ThemeManager.Brush("DashErrorFg");
-            FeedbackStatus.Visibility = Visibility.Visible;
-            return;
-        }
-
-        try
-        {
-            FeedbackStore.Append(text);
-            FeedbackInput.Clear();
-            FeedbackStatus.Text = "Thanks! Your message was saved. We use these notes to decide what to build next.";
-            FeedbackStatus.Foreground = ThemeManager.Brush("DashSuccessFg");
-            FeedbackStatus.Visibility = Visibility.Visible;
-        }
-        catch (Exception ex)
-        {
-            FeedbackStatus.Text = ex.Message;
-            FeedbackStatus.Foreground = ThemeManager.Brush("DashErrorFg");
-            FeedbackStatus.Visibility = Visibility.Visible;
-        }
-    }
 
     private void HideFromTaskbarToggle_Click(object sender, RoutedEventArgs e)
     {
@@ -385,7 +349,6 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         ScrollBilling.Visibility = Visibility.Collapsed;
         ScrollSettings.Visibility = Visibility.Collapsed;
         ScrollHowToUse.Visibility = Visibility.Collapsed;
-        ScrollFeedback.Visibility = Visibility.Collapsed;
         ScrollChatDetail.Visibility = Visibility.Collapsed;
     }
 
@@ -442,21 +405,6 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         _suppressHistorySelection = true;
         HistoryList.SelectedItem = null;
         _suppressHistorySelection = false;
-    }
-
-    private void ShowFeedbackView()
-    {
-        CancelChatFollowUp();
-        _detailRow = null;
-        _detailEntry = null;
-        HideAllMainPanels();
-        ScrollFeedback.Visibility = Visibility.Visible;
-        FeedbackStatus.Visibility = Visibility.Collapsed;
-        SetSidebarNav(feedbackActive: true);
-        _suppressHistorySelection = true;
-        HistoryList.SelectedItem = null;
-        _suppressHistorySelection = false;
-        FeedbackInput.Focus();
     }
 
     private void SyncHowToUseBody()
@@ -559,57 +507,24 @@ public partial class DashboardView : System.Windows.Controls.UserControl
 
     private UIElement CreateContextBubble(string text)
     {
-        var panel = new StackPanel();
-        panel.Children.Add(new TextBlock
+        var preview = SelectionSnippetFormatter.ToPreview(text, 160);
+        var quote = new TextBlock
         {
-            Text = "Selected from your screen",
-            FontFamily = AppTypography.Display,
-            FontSize = 11,
-            FontWeight = FontWeights.SemiBold,
+            Text = preview,
+            FontFamily = AppTypography.Body,
+            FontSize = 16,
+            TextWrapping = TextWrapping.Wrap,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            MaxHeight = 36,
+            LineHeight = 16,
+            LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
             Foreground = (System.Windows.Media.Brush)FindResource("DashSubtle"),
-            Margin = new Thickness(0, 0, 0, 10)
-        });
-
-        var paragraphs = SelectionSnippetFormatter.SplitParagraphs(text);
-        if (paragraphs.Count == 0)
-        {
-            panel.Children.Add(new TextBlock
-            {
-                Text = SelectionSnippetFormatter.SanitizeForDisplay(text),
-                FontFamily = AppTypography.Body,
-                TextWrapping = TextWrapping.Wrap,
-                FontSize = 13,
-                Foreground = (System.Windows.Media.Brush)FindResource("DashMuted"),
-                LineHeight = 22
-            });
-        }
-        else
-        {
-            for (var i = 0; i < paragraphs.Count; i++)
-            {
-                panel.Children.Add(new TextBlock
-                {
-                    Text = paragraphs[i],
-                    FontFamily = AppTypography.Body,
-                    TextWrapping = TextWrapping.Wrap,
-                    FontSize = 13,
-                    Foreground = (System.Windows.Media.Brush)FindResource("DashMuted"),
-                    LineHeight = 22,
-                    Margin = new Thickness(0, 0, 0, i < paragraphs.Count - 1 ? 12 : 0)
-                });
-            }
-        }
-
-        return new Border
-        {
-            Background = ThemeManager.Brush("DashChatBubbleUserBg"),
-            BorderBrush = ThemeManager.Brush("DashChatBubbleUserBorder"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(16, 14, 16, 14),
-            Margin = new Thickness(0, 0, 0, 24),
-            Child = panel
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+            Margin = new Thickness(2, 0, 36, 16),
+            ToolTip = SelectionSnippetFormatter.ToPreview(text, 480)
         };
+        quote.Typography.Variants = FontVariants.Superscript;
+        return quote;
     }
 
     private UIElement CreateUserBubble(string text)
@@ -950,14 +865,12 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         bool dashboardActive = false,
         bool billingActive = false,
         bool settingsActive = false,
-        bool howToUseActive = false,
-        bool feedbackActive = false)
+        bool howToUseActive = false)
     {
         DashboardNav.IsChecked = dashboardActive;
         BillingNav.IsChecked = billingActive;
         SettingsNav.IsChecked = settingsActive;
         HowToUseNav.IsChecked = howToUseActive;
-        FeedbackNav.IsChecked = feedbackActive;
     }
 
     public void RefreshDashboard()
@@ -975,44 +888,13 @@ public partial class DashboardView : System.Windows.Controls.UserControl
     private void RefreshDashboardCore()
     {
         var insights = ChatHistoryStore.GetInsights();
-
-        StatTotalAsks.Text = insights.TotalAsks.ToString();
-        StatPinned.Text = insights.PinnedCount.ToString();
-        StatStreak.Text = insights.StreakDays.ToString();
-
-        var ready = OpenRouterService.IsReady;
-        StatApiKey.Text = ready ? "Built in" : "Missing";
-        StatApiKey.Foreground = ThemeManager.Brush(ready ? "DashSuccessFg" : "DashDangerFg");
-
-        DashboardGreeting.Text = GetTimeGreeting();
-        DashboardHeroSubtitle.Text = !LicenseService.IsLicensed
-            ? FreeAskQuota.Summary
-            : ready
-            ? insights.HeroSubtitle
-            : "Model access is not built into this copy.";
-
-        if (insights.StreakDays >= 2)
-        {
-            DashboardStreakBadge.Visibility = Visibility.Visible;
-            DashboardStreakText.Text = $"🔥 {insights.StreakDays}-day streak";
-        }
-        else
-            DashboardStreakBadge.Visibility = Visibility.Collapsed;
-
-        DashboardWeekChart.ItemsSource = insights.Last7Days;
-        DashboardWeekSummary.Text = insights.AsksLast7Days == 0
-            ? "No asks in the last week yet."
-            : $"{insights.AsksLast7Days} ask{(insights.AsksLast7Days == 1 ? "" : "s")} in the last 7 days";
-
-        PopulateCurrentSettingsPills(ready);
-
         var pinned = insights.PinnedHighlights;
         var hasPinned = pinned.Count > 0;
         DashboardPinnedHeader.Visibility = hasPinned ? Visibility.Visible : Visibility.Collapsed;
-        DashboardPinnedPanel.Visibility = hasPinned ? Visibility.Visible : Visibility.Collapsed;
+        DashboardPinnedList.Visibility = hasPinned ? Visibility.Visible : Visibility.Collapsed;
         DashboardPinnedList.ItemsSource = pinned;
 
-        var activity = ChatHistoryStore.ReadRecentForUi(max: 3);
+        var activity = ChatHistoryStore.ReadRecentForUi(max: 8);
         DashboardActivityList.ItemsSource = activity;
         var hasActivity = activity.Count > 0;
         DashboardActivityList.Visibility = hasActivity ? Visibility.Visible : Visibility.Collapsed;
@@ -1020,61 +902,6 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         DashboardActivityEmpty.Text = hasActivity
             ? ""
             : $"No asks yet. {SettingsStore.GetEmptyStateHint()}";
-    }
-
-    private static string GetTimeGreeting()
-    {
-        var h = DateTime.Now.Hour;
-        var name = h switch
-        {
-            < 12 => "Good morning",
-            < 17 => "Good afternoon",
-            _ => "Good evening"
-        };
-        return $"{name}";
-    }
-
-    private void PopulateCurrentSettingsPills(bool hasKey)
-    {
-        DashboardGlancePills.Children.Clear();
-        var s = SettingsStore.ReadDashboard();
-        var accent = ThemeManager.Color("DashAccentPill");
-
-        if (hasKey)
-            AddGlancePill("Built-in model", accent);
-        if (s.ScreenCaptureEnabled)
-            AddGlancePill("Screen capture", accent);
-        if (s.OpenAtLogin)
-            AddGlancePill("Open at startup", accent);
-        if (s.HideFromTaskbar)
-            AddGlancePill("Hidden from taskbar", accent);
-        if (s.HideFromScreenShare)
-            AddGlancePill("Hidden from screen share", accent);
-        if (s.OverlaySolidOnly)
-            AddGlancePill("Solid overlay", accent);
-        if (s.SelectionMode != SelectionActivationMode.ShiftSelect)
-            AddGlancePill(SettingsStore.GetSelectionModeDisplayName(), accent);
-        if (s.AskBarPlacement == AskBarPlacementMode.BottomCenter)
-            AddGlancePill("Bottom center bar", accent);
-        if (s.Theme == AppTheme.Light)
-            AddGlancePill("Light mode", accent);
-
-        DashboardCurrentSettingsEmpty.Visibility =
-            DashboardGlancePills.Children.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    private void AddGlancePill(string label, System.Windows.Media.Color accent)
-    {
-        var border = new Border { Style = (Style)FindResource("DashInsightPill") };
-        var text = new TextBlock
-        {
-            Text = label,
-            FontSize = 12,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(accent)
-        };
-        border.Child = text;
-        DashboardGlancePills.Children.Add(border);
     }
 
     private const double DashSwitchKnobTravel = 20;
@@ -1186,7 +1013,11 @@ public partial class DashboardView : System.Windows.Controls.UserControl
             ? LicenseService.PriceMessage
             : LicenseService.StatusMessage;
         LicenseStatusText.Text = status;
+        var showStatus = !licensed
+            && !string.Equals(status, LicenseService.PriceMessage, StringComparison.Ordinal)
+            && !string.Equals(status, FreeAskQuota.Summary, StringComparison.Ordinal);
         DashboardLicenseStatusText.Text = status;
+        DashboardLicenseStatusText.Visibility = showStatus ? Visibility.Visible : Visibility.Collapsed;
         BillingFreeAsksText.Text = FreeAskQuota.Summary;
         DashboardFreeAsksText.Text = FreeAskQuota.Summary;
         SettingsPlanSummary.Text = FreeAskQuota.Summary;
@@ -1195,7 +1026,6 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         LicenseBuyButton.Visibility = buy;
         LicenseManageButton.Visibility = licensed ? Visibility.Visible : Visibility.Collapsed;
         DashboardLicenseBuyButton.Visibility = buy;
-        DashboardLicenseCard.Visibility = licensed ? Visibility.Collapsed : Visibility.Visible;
         var enabled = !LicenseService.IsBusy;
         LicenseBuyButton.IsEnabled = enabled;
         LicenseManageButton.IsEnabled = enabled;

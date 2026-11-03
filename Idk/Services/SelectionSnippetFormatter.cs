@@ -27,6 +27,21 @@ public static class SelectionSnippetFormatter
         return cut.TrimEnd() + "…";
     }
 
+    /// <summary>One short line of the highlight, for a raised preview above the chat.</summary>
+    public static string ToPreview(string? raw, int maxChars = 140)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "";
+        var t = JunkCharRx.Replace(raw, " ");
+        t = t.Replace('\r', ' ').Replace('\n', ' ');
+        t = MultiSpaceRx.Replace(t, " ").Trim();
+        if (t.Length <= maxChars) return t;
+        var cut = t[..maxChars];
+        var space = cut.LastIndexOf(' ');
+        if (space > maxChars / 2)
+            cut = cut[..space];
+        return cut.TrimEnd() + "…";
+    }
+
     public static IReadOnlyList<string> SplitParagraphs(string? text)
     {
         var t = SanitizeForDisplay(text, int.MaxValue);

@@ -692,21 +692,26 @@ public static class LicenseService
                     try
                     {
                         await ConfirmSessionAsync(ReadQuery(target, "session_id"));
-                        html = "<html><body style=\"font-family:Segoe UI,sans-serif\"><h1>This computer is subscribed.</h1><p>You can close this tab and return to idk.</p></body></html>";
+                        html = CheckoutPage(
+                            "You're subscribed",
+                            "idk Pro is active on this computer. You can close this tab.",
+                            "ok");
                     }
                     catch (Exception ex)
                     {
                         StatusMessage = Clean(ex.Message, "Checkout could not be confirmed.");
                         Changed?.Invoke();
-                        html = "<html><body style=\"font-family:Segoe UI,sans-serif\"><h1>Payment was not applied.</h1><p>"
-                            + WebUtility.HtmlEncode(StatusMessage) + "</p></body></html>";
+                        html = CheckoutPage("Payment was not applied", StatusMessage, "bad");
                     }
                 }
                 else
                 {
                     StatusMessage = "Payment was canceled.";
                     Changed?.Invoke();
-                    html = "<html><body style=\"font-family:Segoe UI,sans-serif\"><h1>Payment canceled.</h1><p>You can close this tab and return to idk.</p></body></html>";
+                    html = CheckoutPage(
+                        "Checkout canceled",
+                        "No charge was made. You can close this tab.",
+                        "cancel");
                 }
 
                 var bytes = Encoding.UTF8.GetBytes(html);
@@ -720,6 +725,94 @@ public static class LicenseService
         {
             /* The browser can close the tab. */
         }
+    }
+
+    private static string CheckoutPage(string title, string message, string tone)
+    {
+        var mark = tone switch
+        {
+            "ok" => "#EEF3FE",
+            "bad" => "#FEF6E8",
+            _ => "#F4F3F0",
+        };
+        var icon = tone switch
+        {
+            "ok" => """<svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5 9.2 16.7 19 7" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>""",
+            "bad" => """<svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v5" stroke="#B45309" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="16.6" r="1.15" fill="#B45309"/></svg>""",
+            _ => """<svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8" stroke="#78716C" stroke-width="2" stroke-linecap="round"/></svg>""",
+        };
+        var safeTitle = WebUtility.HtmlEncode(title);
+        var safeMessage = WebUtility.HtmlEncode(message);
+        return $$"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>idk</title>
+            <style>
+              * { box-sizing: border-box; }
+              html, body { height: 100%; }
+              body {
+                margin: 0;
+                min-height: 100%;
+                display: grid;
+                place-items: center;
+                background: #f6f5f2;
+                color: #1c1917;
+                font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+                -webkit-font-smoothing: antialiased;
+              }
+              main {
+                width: min(420px, calc(100% - 48px));
+                background: #fff;
+                border: 1px solid #e7e5e0;
+                border-radius: 20px;
+                box-shadow: 0 24px 60px rgba(28, 25, 23, 0.06);
+                padding: 44px 40px 40px;
+                text-align: center;
+              }
+              .mark {
+                width: 64px;
+                height: 64px;
+                margin: 0 auto 22px;
+                border-radius: 50%;
+                background: {{mark}};
+                display: grid;
+                place-items: center;
+              }
+              .brand {
+                margin: 0 0 8px;
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: -0.02em;
+                color: #a8a29e;
+              }
+              h1 {
+                margin: 0 0 10px;
+                font-size: 26px;
+                font-weight: 600;
+                letter-spacing: -0.03em;
+                line-height: 1.2;
+              }
+              p {
+                margin: 0;
+                font-size: 15px;
+                line-height: 1.55;
+                color: #57534e;
+              }
+            </style>
+            </head>
+            <body>
+              <main>
+                <div class="mark">{{icon}}</div>
+                <p class="brand">idk</p>
+                <h1>{{safeTitle}}</h1>
+                <p>{{safeMessage}}</p>
+              </main>
+            </body>
+            </html>
+            """;
     }
 
     private static string ReadQuery(string target, string name)

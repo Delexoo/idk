@@ -22,4 +22,5 @@ Check Overlay, Dashboard, Setup, and Chat. Use Site for the website. Add a headi
 - If it exists, append the sentence. Leave older notes as they are.
 - Do not log formatting, reverted work, or a change that is already written there.
 - One note is one change. Do not use a `notes` list.
+- Run `node scripts/render-release-notes.mjs` so `website/releases.html` matches the log. The page shows Added, then Bug fixes. Every version in the log appears there.
 - Do not commit or publish only because the log changed.

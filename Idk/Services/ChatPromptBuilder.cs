@@ -13,10 +13,7 @@ public static class ChatPromptBuilder
         var sb = new StringBuilder();
         AppendHighlightBlock(sb, highlight);
         sb.Append(question.Trim());
-
-        if (includeScreenCapture)
-            sb.Append("\n\n[Screenshot attached.]");
-
+        _ = includeScreenCapture;
         return sb.ToString().Trim();
     }
 

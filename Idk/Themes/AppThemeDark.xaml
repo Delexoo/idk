@@ -90,8 +90,14 @@
     <SolidColorBrush x:Key="OverlayExitPressedBg" Color="#222222" />
     <SolidColorBrush x:Key="OverlayIconStroke" Color="#8A8A8A" />
     <SolidColorBrush x:Key="OverlayIconStrokeHover" Color="#A8A8A8" />
-    <SolidColorBrush x:Key="OverlayCardDivider" Color="#333333" />
-    <SolidColorBrush x:Key="OverlayCardFooterBg" Color="#1A1A1A" />
+    <SolidColorBrush x:Key="OverlayCardDivider" Color="#2A2A28" />
+    <SolidColorBrush x:Key="OverlayCardFooterBg" Color="#181818" />
+    <SolidColorBrush x:Key="OverlayAssistantBg" Color="#141413" />
+    <SolidColorBrush x:Key="OverlayAssistantBorder" Color="#2E2E2C" />
+    <SolidColorBrush x:Key="OverlayAssistantInk" Color="#DCDCDC" />
+    <SolidColorBrush x:Key="OverlaySelectionPreview" Color="#9A9A9A" />
+    <SolidColorBrush x:Key="OverlayTypingDot" Color="#8E8E8E" />
+    <SolidColorBrush x:Key="OverlayLabelMuted" Color="#8A8A8A" />
     <SolidColorBrush x:Key="OverlayFollowUpPlaceholder" Color="#6E6E6E" />
     <SolidColorBrush x:Key="OverlayExitStroke" Color="#B0B0B0" />
     <SolidColorBrush x:Key="OverlayErrorFg" Color="#C98A8A" />

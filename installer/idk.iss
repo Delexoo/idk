@@ -1,5 +1,5 @@
 #define MyAppName "idk"
-#define MyAppVersion "0.1.6"
+#define MyAppVersion "0.1.12"
 #define MyAppPublisher "idk"
 #define MyAppExeName "idk.exe"
 
@@ -26,7 +26,7 @@ WizardStyle=modern
 UninstallDisplayName=idk
 VersionInfoCompany=idk
 VersionInfoProductName=idk
-VersionInfoVersion=0.1.6.0
+VersionInfoVersion=0.1.12.0
 VersionInfoCopyright=Copyright (C) 2026 idk
 SetupLogging=yes
 ArchitecturesInstallIn64BitMode=x64compatible

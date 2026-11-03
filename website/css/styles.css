@@ -1652,3 +1652,66 @@ body.tutorial-overlay-on .demo-layout {
     padding: 56px 20px;
   }
 }
+
+.release-log {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.release {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 24px 8px;
+}
+
+.release-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--subtle);
+  font-size: 13px;
+}
+
+.release-tag {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.release-latest {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.release h2 {
+  margin: 12px 0 4px;
+  font-size: 22px;
+}
+
+.release h3 {
+  margin: 18px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--subtle);
+}
+
+.release h4 {
+  margin: 12px 0 0;
+  font-size: 15px;
+}
+
+.release ul {
+  margin: 6px 0 14px;
+  padding-left: 18px;
+}
+
+.release li {
+  color: var(--muted);
+  margin: 4px 0;
+}

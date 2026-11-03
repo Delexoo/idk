@@ -45,6 +45,21 @@ internal static class ScreenShareVisibility
         }
     }
 
+    /// <summary>Hide every idk window from the next screen capture, then restore with <see cref="ApplyAll"/>.</summary>
+    public static void ForceExcludeAll()
+    {
+        var app = System.Windows.Application.Current;
+        if (app == null) return;
+        if (!app.Dispatcher.CheckAccess())
+        {
+            app.Dispatcher.Invoke(ForceExcludeAll);
+            return;
+        }
+
+        foreach (Window window in app.Windows)
+            ForceExclude(window);
+    }
+
     public static void ApplyAll()
     {
         var app = System.Windows.Application.Current;
@@ -64,6 +79,13 @@ internal static class ScreenShareVisibility
             if (source is HwndSource hwnd && hwnd.Handle != IntPtr.Zero)
                 ApplyHandle(hwnd.Handle);
         }
+    }
+
+    private static void ForceExclude(Window window)
+    {
+        var hwnd = new WindowInteropHelper(window).Handle;
+        if (hwnd != IntPtr.Zero)
+            SetWindowDisplayAffinity(hwnd, WdaExcludeFromCapture);
     }
 
     private static void ApplyHandle(IntPtr hwnd) =>

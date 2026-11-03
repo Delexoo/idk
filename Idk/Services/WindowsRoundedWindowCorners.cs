@@ -13,6 +13,15 @@ internal static class WindowsRoundedWindowCorners
     /// <summary>DWMWA_BORDER_COLOR — removes the default light frame around small-rounded layered windows.</summary>
     private const int DwmwaBorderColor = 34;
 
+    /// <summary>DWMWA_CAPTION_COLOR.</summary>
+    private const int DwmwaCaptionColor = 35;
+
+    /// <summary>DWMWA_SYSTEMBACKDROP_TYPE. A light backdrop fills transparent corners once the window sits still.</summary>
+    private const int DwmwaSystemBackdropType = 38;
+
+    /// <summary>DWMSBT_NONE.</summary>
+    private const int DwmsbtNone = 1;
+
     /// <summary>DWMWINDOWATTRIBUTE_COLOR_NONE (dwmapi.h).</summary>
     private const int DwmColorNone = unchecked((int)0xFFFFFFFE);
 
@@ -37,9 +46,16 @@ internal static class WindowsRoundedWindowCorners
         if (hwnd == IntPtr.Zero) return;
         var pref = 1; // DWMWCP_DONOTROUND
         _ = DwmSetWindowAttribute(hwnd, DwmwaWindowCornerPreference, ref pref, sizeof(int));
+        if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22621))
+        {
+            var backdrop = DwmsbtNone;
+            _ = DwmSetWindowAttribute(hwnd, DwmwaSystemBackdropType, ref backdrop, sizeof(int));
+        }
+
         if (!suppressDwmBorder) return;
         var none = DwmColorNone;
         _ = DwmSetWindowAttribute(hwnd, DwmwaBorderColor, ref none, sizeof(int));
+        _ = DwmSetWindowAttribute(hwnd, DwmwaCaptionColor, ref none, sizeof(int));
     }
 
     /// <param name="suppressDwmBorder">When true, clear the system border color (overlay pill: avoid gray rectangle around rounded chrome).</param>

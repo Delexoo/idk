@@ -169,17 +169,10 @@
         </Style>
 
         <Style x:Key="DashDetailBlock" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource DashCardBg}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DashCardBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Padding" Value="16,14" />
-            <Setter Property="Margin" Value="0,0,0,20" />
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="{DynamicResource DashCardHoverBorder}" />
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,0,28" />
         </Style>
 
         <Style x:Key="DashDetailBody" TargetType="TextBlock">
@@ -248,28 +241,19 @@
         </Style>
 
         <Style x:Key="DashSettingCard" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource DashCardBg}" />
+            <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="{DynamicResource DashCardBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="12" />
-            <Setter Property="Padding" Value="20,18" />
-            <Setter Property="Margin" Value="0,0,0,12" />
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="{DynamicResource DashCardHoverBorder}" />
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Padding" Value="0,18" />
+            <Setter Property="Margin" Value="0" />
         </Style>
 
         <Style x:Key="DashIconHost" TargetType="Border">
-            <Setter Property="Width" Value="36" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="CornerRadius" Value="9" />
-            <Setter Property="Background" Value="{DynamicResource DashIconHostBg}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DashIconHostBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Margin" Value="0,0,14,0" />
-            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Setter Property="Width" Value="0" />
+            <Setter Property="Height" Value="0" />
+            <Setter Property="Margin" Value="0" />
         </Style>
 
         <Style x:Key="DashIconGlyph" TargetType="TextBlock">
@@ -424,18 +408,22 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="9"
-                                Padding="{TemplateBinding Padding}"
                                 RenderTransformOrigin="0.5,0.5">
                             <Border.RenderTransform>
                                 <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
                             </Border.RenderTransform>
                             <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
                                 <Border x:Name="Wash"
                                         Background="{DynamicResource DashHoverWash}"
                                         Opacity="0"
                                         CornerRadius="8"
                                         IsHitTestVisible="False" />
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -488,6 +476,9 @@
                                 <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
                             </Border.RenderTransform>
                             <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
                                 <Border x:Name="Wash"
                                         Background="{DynamicResource DashHoverWash}"
                                         Opacity="0"
@@ -713,18 +704,22 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="8"
-                                Padding="{TemplateBinding Padding}"
                                 RenderTransformOrigin="0.5,0.5">
                             <Border.RenderTransform>
                                 <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
                             </Border.RenderTransform>
                             <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
                                 <Border x:Name="Wash"
                                         Background="{DynamicResource DashHoverWash}"
                                         Opacity="0"
                                         CornerRadius="7"
                                         IsHitTestVisible="False" />
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -868,19 +863,6 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="DashFeedbackBox" TargetType="TextBox">
-            <Setter Property="MinHeight" Value="140" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="Foreground" Value="{DynamicResource DashInk}" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="12,10" />
-            <Setter Property="CaretBrush" Value="{DynamicResource DashInk}" />
-            <Setter Property="AcceptsReturn" Value="True" />
-            <Setter Property="TextWrapping" Value="Wrap" />
-            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
-        </Style>
-
         <Style x:Key="DashApiKeyBox" TargetType="PasswordBox">
             <Setter Property="Height" Value="32" />
             <Setter Property="FontSize" Value="13" />
@@ -967,6 +949,9 @@
                                 <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
                             </Border.RenderTransform>
                             <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
                                 <Border x:Name="Wash"
                                         Background="{DynamicResource DashHoverWash}"
                                         Opacity="0"
@@ -1046,16 +1031,12 @@
                 </Border>
 
                 <TextBlock DockPanel.Dock="Bottom"
-                           Text="Selection assistant"
-                           Foreground="{DynamicResource DashSubtle}"
-                           FontSize="11"
-                           TextWrapping="Wrap"
-                           LineHeight="16"
-                           Margin="18,0,18,24" />
+                           Text=""
+                           Height="16"
+                           Margin="0,0,0,12" />
 
                 <Grid Margin="14,24,14,20">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -1074,8 +1055,7 @@
                             <TextBlock Text="Dashboard"
                                        VerticalAlignment="Center"
                                        Margin="10,0,0,0"
-                                       FontSize="14"
-                                       FontWeight="SemiBold" />
+                                       FontSize="14" />
                         </StackPanel>
                     </RadioButton>
 
@@ -1090,8 +1070,7 @@
                             <TextBlock Text="Billing"
                                        VerticalAlignment="Center"
                                        Margin="10,0,0,0"
-                                       FontSize="14"
-                                       FontWeight="SemiBold" />
+                                       FontSize="14" />
                         </StackPanel>
                     </RadioButton>
 
@@ -1106,8 +1085,7 @@
                             <TextBlock Text="Settings"
                                        VerticalAlignment="Center"
                                        Margin="10,0,0,0"
-                                       FontSize="14"
-                                       FontWeight="SemiBold" />
+                                       FontSize="14" />
                         </StackPanel>
                     </RadioButton>
 
@@ -1122,31 +1100,14 @@
                             <TextBlock Text="How to use"
                                        VerticalAlignment="Center"
                                        Margin="10,0,0,0"
-                                       FontSize="14"
-                                       FontWeight="SemiBold" />
+                                       FontSize="14" />
                         </StackPanel>
                     </RadioButton>
 
-                    <RadioButton x:Name="FeedbackNav"
-                                 Grid.Row="4"
-                                 GroupName="DashNav"
-                                 Style="{StaticResource DashNavItem}"
-                                 Margin="0,0,0,2"
-                                 Click="FeedbackNav_Click">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Style="{StaticResource DashNavGlyph}" Text="&#xED15;" />
-                            <TextBlock Text="Send feedback"
-                                       VerticalAlignment="Center"
-                                       Margin="10,0,0,0"
-                                       FontSize="14"
-                                       FontWeight="SemiBold" />
-                        </StackPanel>
-                    </RadioButton>
-
-                    <TextBlock Grid.Row="5" Text="Chats" Style="{StaticResource DashSidebarSection}" Margin="4,8,0,8" />
+                    <TextBlock Grid.Row="4" Text="Chats" Style="{StaticResource DashSidebarSection}" Margin="4,8,0,8" />
 
                     <ScrollViewer x:Name="ChatHistoryScroller"
-                                  Grid.Row="6"
+                                  Grid.Row="5"
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
                                   PreviewMouseWheel="SmoothScroll_PreviewMouseWheel">
@@ -1171,171 +1132,58 @@
         <!-- Main -->
         <Grid Grid.Column="1" Background="{DynamicResource AppBg}">
             <ScrollViewer x:Name="ScrollDashboard"
-                          Padding="48,44,56,56"
+                          Padding="48,72,56,56"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
-                <StackPanel MaxWidth="800" HorizontalAlignment="Center">
-                    <TextBlock Text="Dashboard"
+                <StackPanel MaxWidth="520" HorizontalAlignment="Center">
+                    <TextBlock Text="idk"
                                Style="{StaticResource DashPageTitle}"
+                               FontSize="40"
                                TextAlignment="Center" />
-                    <TextBlock Text="Overview of your idk usage and recent activity."
+                    <TextBlock x:Name="DashboardFreeAsksText"
+                               Text="5 free asks left. Then idk Pro is required."
                                Style="{StaticResource DashPageSub}"
                                TextAlignment="Center"
-                               Margin="0,10,0,20" />
-
-                    <Border x:Name="DashboardLicenseCard" Style="{StaticResource DashSettingCard}">
-                        <StackPanel>
-                            <TextBlock Text="This computer" Style="{StaticResource DashRowLabel}" />
-                            <TextBlock x:Name="DashboardLicenseStatusText"
-                                       Text="idk Pro is $3 a month for this computer."
-                                       Style="{StaticResource DashRowDesc}"
-                                       Margin="0,6,0,0" />
-                            <TextBlock x:Name="DashboardFreeAsksText"
-                                       Text="5 free asks left. Then idk Pro is required."
-                                       Style="{StaticResource DashRowDesc}"
-                                       Margin="0,6,0,0" />
-                            <Button x:Name="DashboardLicenseBuyButton"
-                                    Content="Upgrade"
-                                    Style="{StaticResource DashLicenseBtn}"
-                                    Click="OpenBilling_Click" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Style="{StaticResource DashHeroCard}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="4" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0"
-                                    Background="{DynamicResource DashAccentBlue}"
-                                    CornerRadius="2"
-                                    Margin="0,2,14,2" />
-                            <StackPanel Grid.Column="1">
-                                <TextBlock x:Name="DashboardGreeting"
-                                           FontSize="20"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource DashInk}"
-                                           TextAlignment="Center" />
-                                <TextBlock x:Name="DashboardHeroSubtitle"
-                                           Style="{StaticResource DashPageSub}"
-                                           TextAlignment="Center"
-                                           Margin="0,6,0,0" />
-                                <Border x:Name="DashboardStreakBadge"
-                                        Background="{DynamicResource DashStreakBadgeBg}"
-                                        BorderBrush="{DynamicResource DashStreakBadgeBorder}"
-                                        BorderThickness="1"
-                                        CornerRadius="8"
-                                        Padding="10,5"
-                                        Margin="0,12,0,0"
-                                        HorizontalAlignment="Center"
-                                        Visibility="Collapsed">
-                                    <TextBlock x:Name="DashboardStreakText"
-                                               FontSize="12"
-                                               FontWeight="SemiBold"
-                                               Foreground="{DynamicResource DashStreakBadgeFg}" />
-                                </Border>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <WrapPanel Margin="0,0,0,8" HorizontalAlignment="Center">
-                        <Border Style="{StaticResource DashStatCard}">
-                            <StackPanel>
-                                <TextBlock x:Name="StatTotalAsks" Text="0" Style="{StaticResource DashStatValue}" />
-                                <TextBlock Text="Total asks" Style="{StaticResource DashStatLabel}" />
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource DashStatCard}">
-                            <StackPanel>
-                                <TextBlock x:Name="StatPinned" Text="0" Style="{StaticResource DashStatValue}" />
-                                <TextBlock Text="Pinned chats" Style="{StaticResource DashStatLabel}" />
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource DashStatCard}">
-                            <StackPanel>
-                                <TextBlock x:Name="StatStreak" Text="0" Style="{StaticResource DashStatValue}" />
-                                <TextBlock Text="Day streak" Style="{StaticResource DashStatLabel}" />
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource DashStatCard}">
-                            <StackPanel>
-                                <TextBlock x:Name="StatApiKey" Text="—" Style="{StaticResource DashStatValue}" FontSize="22" />
-                                <TextBlock Text="Model" Style="{StaticResource DashStatLabel}" />
-                            </StackPanel>
-                        </Border>
-                    </WrapPanel>
-
-                    <Grid Margin="0,4,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Grid.Column="0" Style="{StaticResource DashPanelCard}">
-                            <StackPanel>
-                                <TextBlock Text="LAST 7 DAYS" Style="{StaticResource DashDetailLabel}" Margin="0,0,0,12" />
-                                <ItemsControl x:Name="DashboardWeekChart">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <UniformGrid Rows="1" Columns="7" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                </ItemsControl>
-                                <TextBlock x:Name="DashboardWeekSummary"
-                                           Foreground="{DynamicResource DashMuted}"
-                                           FontSize="12"
-                                           Margin="0,14,0,0"
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Column="2" Style="{StaticResource DashPanelCard}">
-                            <StackPanel>
-                                <TextBlock Text="CURRENT SETTINGS" Style="{StaticResource DashDetailLabel}" Margin="0,0,0,12" />
-                                <WrapPanel x:Name="DashboardGlancePills" />
-                                <TextBlock x:Name="DashboardCurrentSettingsEmpty"
-                                           Foreground="{DynamicResource DashMuted}"
-                                           FontSize="12"
-                                           TextWrapping="Wrap"
-                                           Visibility="Collapsed"
-                                           Text="No optional settings are on yet." />
-                            </StackPanel>
-                        </Border>
-                    </Grid>
+                               Margin="0,14,0,0" />
+                    <TextBlock x:Name="DashboardLicenseStatusText"
+                               Text="idk Pro is $3 a month for this computer."
+                               Style="{StaticResource DashPageSub}"
+                               TextAlignment="Center"
+                               Margin="0,6,0,0"
+                               Visibility="Collapsed" />
+                    <Button x:Name="DashboardLicenseBuyButton"
+                            Content="Upgrade"
+                            Style="{StaticResource DashLicenseBtn}"
+                            HorizontalAlignment="Center"
+                            Margin="0,22,0,0"
+                            Click="OpenBilling_Click" />
 
                     <TextBlock x:Name="DashboardPinnedHeader"
-                               Text="PINNED"
+                               Text="Pinned"
                                Style="{StaticResource DashDetailLabel}"
-                               Margin="0,4,0,8"
+                               Margin="0,56,0,8"
                                Visibility="Collapsed" />
-                    <Border x:Name="DashboardPinnedPanel"
-                            Style="{StaticResource DashDetailBlock}"
-                            Padding="8,6,8,8"
-                            Margin="0,0,0,16"
-                            Visibility="Collapsed">
-                        <ListBox x:Name="DashboardPinnedList"
-                                 Style="{StaticResource DashActivityList}"
-                                 SelectionChanged="DashboardPinnedList_SelectionChanged" />
-                    </Border>
+                    <ListBox x:Name="DashboardPinnedList"
+                             Style="{StaticResource DashActivityList}"
+                             Margin="0,0,0,8"
+                             Visibility="Collapsed"
+                             SelectionChanged="DashboardPinnedList_SelectionChanged" />
 
-                    <TextBlock Text="RECENT ACTIVITY" Style="{StaticResource DashDetailLabel}" Margin="0,0,0,8" />
-                    <Border Style="{StaticResource DashDetailBlock}" Padding="8,6,8,8" Margin="0,0,0,0">
-                        <StackPanel>
-                            <ListBox x:Name="DashboardActivityList"
-                                     Style="{StaticResource DashActivityList}"
-                                     SelectionChanged="DashboardActivityList_SelectionChanged"
-                                     Visibility="Collapsed" />
-                            <TextBlock x:Name="DashboardActivityEmpty"
-                                       Text="No asks yet."
-                                       Foreground="{DynamicResource DashSubtle}"
-                                       FontSize="13"
-                                       TextWrapping="Wrap"
-                                       LineHeight="20"
-                                       Margin="8,6" />
-                        </StackPanel>
-                    </Border>
+                    <TextBlock Text="Recent"
+                               Style="{StaticResource DashDetailLabel}"
+                               Margin="0,48,0,8" />
+                    <ListBox x:Name="DashboardActivityList"
+                             Style="{StaticResource DashActivityList}"
+                             SelectionChanged="DashboardActivityList_SelectionChanged"
+                             Visibility="Collapsed" />
+                    <TextBlock x:Name="DashboardActivityEmpty"
+                               Text="No asks yet."
+                               Foreground="{DynamicResource DashSubtle}"
+                               FontSize="14"
+                               TextWrapping="Wrap"
+                               LineHeight="22"
+                               TextAlignment="Center"
+                               Margin="0,8,0,0" />
                 </StackPanel>
             </ScrollViewer>
 
@@ -1600,7 +1448,7 @@
                                 </StackPanel>
                             </Grid>
                             <Border HorizontalAlignment="Left"
-                                    Margin="50,14,0,0"
+                                    Margin="0,14,0,0"
                                     Background="{DynamicResource DashSegmentTrackBg}"
                                     BorderBrush="{DynamicResource DashSegmentTrackBorder}"
                                     BorderThickness="1"
@@ -1857,50 +1705,6 @@
                     <Border Style="{StaticResource DashDetailBlock}">
                         <TextBlock x:Name="HowToUseBody"
                                    Style="{StaticResource DashDetailBody}" />
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
-
-            <ScrollViewer x:Name="ScrollFeedback"
-                          Padding="48,44,56,56"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Visibility="Collapsed">
-                <StackPanel MaxWidth="640" HorizontalAlignment="Center">
-                    <TextBlock Text="Feature feedback"
-                               Style="{StaticResource DashPageTitle}"
-                               TextAlignment="Center" />
-                    <TextBlock Text="Tell us what you'd like idk to do next — new features, improvements, or fixes."
-                               Style="{StaticResource DashPageSub}"
-                               TextAlignment="Center"
-                               Margin="0,10,0,28" />
-                    <Border Style="{StaticResource DashDetailBlock}">
-                        <StackPanel>
-                            <TextBlock Text="Your message"
-                                       Style="{StaticResource DashRowLabel}" />
-                            <TextBlock Text="We read every suggestion. Saved locally on this PC."
-                                       Style="{StaticResource DashRowDesc}"
-                                       Margin="0,4,0,12" />
-                            <Border Style="{StaticResource DashApiKeyHost}"
-                                    MinHeight="140"
-                                    Height="Auto"
-                                    Padding="0">
-                                <TextBox x:Name="FeedbackInput"
-                                         Style="{StaticResource DashFeedbackBox}" />
-                            </Border>
-                            <Button x:Name="FeedbackSendBtn"
-                                    Content="Send feedback"
-                                    Style="{StaticResource DashReplayBtn}"
-                                    HorizontalAlignment="Left"
-                                    Margin="0,16,0,0"
-                                    Click="FeedbackSend_Click" />
-                            <TextBlock x:Name="FeedbackStatus"
-                                       FontSize="13"
-                                       TextWrapping="Wrap"
-                                       LineHeight="20"
-                                       Margin="0,12,0,0"
-                                       Visibility="Collapsed" />
-                        </StackPanel>
                     </Border>
                 </StackPanel>
             </ScrollViewer>
