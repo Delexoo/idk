@@ -16,6 +16,8 @@
     <SolidColorBrush x:Key="DashAccentPill" Color="#047857" />
     <SolidColorBrush x:Key="DashSidebarBg" Color="#FFFFFF" />
     <SolidColorBrush x:Key="DashNavSelected" Color="#EEEDEB" />
+    <SolidColorBrush x:Key="DashNavHover" Color="#E7E5E0" />
+    <SolidColorBrush x:Key="DashNavPressed" Color="#DCD9D3" />
     <SolidColorBrush x:Key="DashCardBg" Color="#FFFFFF" />
     <SolidColorBrush x:Key="DashCardBorder" Color="#E5E2DC" />
     <SolidColorBrush x:Key="DashInsightPillBg" Color="#F3F2EF" />
@@ -31,6 +33,12 @@
     <SolidColorBrush x:Key="DashSwitchKnob" Color="#FFFFFF" />
     <SolidColorBrush x:Key="DashBtnBg" Color="#FFFFFF" />
     <SolidColorBrush x:Key="DashBtnBorder" Color="#D4D1CB" />
+    <SolidColorBrush x:Key="DashBtnHoverBg" Color="#F3F2EF" />
+    <SolidColorBrush x:Key="DashBtnPressedBg" Color="#E7E5E0" />
+    <SolidColorBrush x:Key="DashHoverWash" Color="#29000000" />
+    <SolidColorBrush x:Key="DashPressWash" Color="#47000000" />
+    <SolidColorBrush x:Key="DashCardHoverBorder" Color="#C9C5BE" />
+    <SolidColorBrush x:Key="DashSwitchTrackOffHover" Color="#B7B3AC" />
     <SolidColorBrush x:Key="DashFabBg" Color="#FFFFFF" />
     <SolidColorBrush x:Key="DashFabBorder" Color="#D4D1CB" />
     <SolidColorBrush x:Key="BannerErrBg" Color="#FEF2F2" />

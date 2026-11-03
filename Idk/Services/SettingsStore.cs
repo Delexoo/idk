@@ -31,6 +31,9 @@ public static class SettingsStore
     /// <summary>When true, dashboard / intro windows use <c>ShowInTaskbar=false</c> (use tray “Open dashboard” while idk is on).</summary>
     public static bool HideFromTaskbar { get; private set; }
 
+    /// <summary>When true, idk windows are omitted from screenshots, screen shares, and streams. The process stays visible in Task Manager.</summary>
+    public static bool HideFromScreenShare { get; private set; }
+
     /// <summary>Legacy flag: true when <see cref="SelectionMode"/> is <see cref="SelectionActivationMode.Instant"/>.</summary>
     public static bool ActivateOnAnySelection => SelectionMode == SelectionActivationMode.Instant;
 
@@ -39,6 +42,9 @@ public static class SettingsStore
 
     /// <summary>How text selection triggers the overlay. Default is Shift + select.</summary>
     public static SelectionActivationMode SelectionMode { get; private set; } = SelectionActivationMode.ShiftSelect;
+
+    /// <summary>Where the mini ask bar sits. Default follows the cursor.</summary>
+    public static AskBarPlacementMode AskBarPlacement { get; private set; } = AskBarPlacementMode.FollowCursor;
 
     public static int SelectionHotkeyVk { get; private set; }
 
@@ -58,6 +64,8 @@ public static class SettingsStore
         public bool? OverlaySolidOnly { get; set; }
         [JsonPropertyName("hideFromTaskbar")]
         public bool? HideFromTaskbar { get; set; }
+        [JsonPropertyName("hideFromScreenShare")]
+        public bool? HideFromScreenShare { get; set; }
         [JsonPropertyName("activateOnAnySelection")]
         public bool? ActivateOnAnySelection { get; set; }
         [JsonPropertyName("selectionActivationMode")]
@@ -68,6 +76,8 @@ public static class SettingsStore
         public int? SelectionHotkeyModifiers { get; set; }
         [JsonPropertyName("theme")]
         public string? Theme { get; set; }
+        [JsonPropertyName("askBarPlacement")]
+        public string? AskBarPlacement { get; set; }
     }
 
     private static void SyncScreenCaptureFrom(FileDto cur) =>
@@ -78,6 +88,9 @@ public static class SettingsStore
 
     private static void SyncHideFromTaskbarFrom(FileDto cur) =>
         HideFromTaskbar = cur.HideFromTaskbar == true;
+
+    private static void SyncHideFromScreenShareFrom(FileDto cur) =>
+        HideFromScreenShare = cur.HideFromScreenShare == true;
 
     private static void SyncThemeFrom(FileDto cur)
     {
@@ -108,6 +121,26 @@ public static class SettingsStore
         SelectionHotkeyVk = cur.SelectionHotkeyVk ?? 0;
         SelectionHotkeyModifiers = cur.SelectionHotkeyModifiers ?? 0;
     }
+
+    private static void SyncAskBarPlacementFrom(FileDto cur)
+    {
+        if (!string.IsNullOrWhiteSpace(cur.AskBarPlacement)
+            && Enum.TryParse<AskBarPlacementMode>(cur.AskBarPlacement, true, out var parsed))
+        {
+            AskBarPlacement = parsed;
+            return;
+        }
+
+        AskBarPlacement = AskBarPlacementMode.FollowCursor;
+    }
+
+    public static string GetAskBarPlacementDescription() =>
+        AskBarPlacement switch
+        {
+            AskBarPlacementMode.BottomCenter =>
+                "The mini search bar stays locked at the bottom center of the screen.",
+            _ => "The search bar follows your cursor."
+        };
 
     public static string GetSelectionModeDisplayName() =>
         SelectionMode switch
@@ -171,15 +204,30 @@ public static class SettingsStore
         return $"Key {vk}";
     }
 
-    /// <summary>True when the current selection mode allows showing the overlay for this highlight.</summary>
-    public static bool IsSelectionActivationSatisfied() =>
-        SelectionMode switch
+    private static bool _gestureSatisfied;
+
+    /// <summary>
+    /// Remember whether the selection key was down when the drag started or ended.
+    /// The overlay check runs after the mouse button is released, and the key is usually up by then.
+    /// </summary>
+    public static void NoteSelectionGesture(bool starting)
+    {
+        var down = SelectionMode switch
         {
             SelectionActivationMode.Instant => true,
             SelectionActivationMode.ShiftSelect => IsVirtualKeyDown(0x10),
             SelectionActivationMode.CustomHotkey => IsCustomHotkeyHeld(),
             _ => IsVirtualKeyDown(0x10)
         };
+        if (starting)
+            _gestureSatisfied = down;
+        else if (down)
+            _gestureSatisfied = true;
+    }
+
+    /// <summary>True when this drag is allowed to open the ask bar.</summary>
+    public static bool SelectionGestureWasActivated =>
+        SelectionMode == SelectionActivationMode.Instant || _gestureSatisfied;
 
     private static bool IsCustomHotkeyHeld()
     {
@@ -203,28 +251,21 @@ public static class SettingsStore
 
     private static bool IsVirtualKeyDown(int vk) => (GetAsyncKeyState(vk) & 0x8000) != 0;
 
-    /// <summary>True when the user has saved an OpenRouter key in idk-settings.json.</summary>
-    public static bool HasStoredApiKey()
+    private static void ForgetSavedApiKey()
     {
-        var key = ReadFileDtoOrDefault().OpenrouterApiKey?.Trim() ?? "";
-        return key.Length > 0;
-    }
-
-    /// <summary>OpenRouter key from environment (after load) or settings file.</summary>
-    public static string? GetOpenRouterApiKeyOrNull()
-    {
-        var env = Environment.GetEnvironmentVariable("OPENROUTER_API_KEY")?.Trim();
-        if (env is { Length: > 0 }) return env;
-        var file = ReadFileDtoOrDefault().OpenrouterApiKey?.Trim();
-        return file is { Length: > 0 } ? file : null;
-    }
-
-    /// <summary>Masked preview of the saved key (last four characters), or empty.</summary>
-    public static string GetStoredApiKeyPreview()
-    {
-        var key = ReadFileDtoOrDefault().OpenrouterApiKey?.Trim() ?? "";
-        if (key.Length == 0) return "";
-        return key.Length <= 4 ? "••••" : "••••••••" + key[^4..];
+        try
+        {
+            if (!File.Exists(FilePath)) return;
+            var cur = JsonSerializer.Deserialize<FileDto>(File.ReadAllText(FilePath), JsonOpts);
+            if (cur == null || string.IsNullOrWhiteSpace(cur.OpenrouterApiKey)) return;
+            cur.OpenrouterApiKey = null;
+            Directory.CreateDirectory(Dir);
+            File.WriteAllText(FilePath, JsonSerializer.Serialize(cur, JsonOpts));
+        }
+        catch
+        {
+            /* Leave other settings in place. */
+        }
     }
 
     private static FileDto ReadFileDtoOrDefault()
@@ -245,21 +286,24 @@ public static class SettingsStore
         IsScreenCaptureEnabled = false;
         IsOverlaySolidOnly = false;
         HideFromTaskbar = false;
+        HideFromScreenShare = false;
         AppTheme = AppTheme.Dark;
         SelectionMode = SelectionActivationMode.ShiftSelect;
         SelectionHotkeyVk = 0;
         SelectionHotkeyModifiers = 0;
+        AskBarPlacement = AskBarPlacementMode.FollowCursor;
         Environment.SetEnvironmentVariable("OPENROUTER_API_KEY", null);
+        ForgetSavedApiKey();
         try
         {
             var dto = ReadFileDtoOrDefault();
             SyncScreenCaptureFrom(dto);
             SyncOverlaySolidFrom(dto);
             SyncHideFromTaskbarFrom(dto);
+            SyncHideFromScreenShareFrom(dto);
             SyncThemeFrom(dto);
             SyncSelectionModeFrom(dto);
-            if (!string.IsNullOrWhiteSpace(dto.OpenrouterApiKey))
-                Environment.SetEnvironmentVariable("OPENROUTER_API_KEY", dto.OpenrouterApiKey.Trim());
+            SyncAskBarPlacementFrom(dto);
             if (!string.IsNullOrWhiteSpace(dto.IdkTextModel))
                 Environment.SetEnvironmentVariable("IDK_TEXT_MODEL", dto.IdkTextModel.Trim());
             if (!string.IsNullOrWhiteSpace(dto.IdkVisionModel))
@@ -271,21 +315,21 @@ public static class SettingsStore
     public static DashboardDto ReadDashboard()
     {
         var file = ReadFileDtoOrDefault();
-        var key = file.OpenrouterApiKey?.Trim() ?? "";
-        var preview = key.Length == 0 ? "" : key.Length <= 4 ? "••••" : "••••••••" + key[^4..];
         return new DashboardDto(
-            key.Length > 0,
-            preview,
+            SealedApi.IsReady,
+            "",
             Environment.GetEnvironmentVariable("IDK_TEXT_MODEL")?.Trim() ?? "",
             Environment.GetEnvironmentVariable("IDK_VISION_MODEL")?.Trim() ?? "",
             IsLaunchAtLoginEnabled(),
             IsScreenCaptureEnabled,
             IsOverlaySolidOnly,
             HideFromTaskbar,
+            HideFromScreenShare,
             SelectionMode,
             SelectionHotkeyVk,
             SelectionHotkeyModifiers,
-            AppTheme
+            AppTheme,
+            AskBarPlacement
         );
     }
 
@@ -302,10 +346,7 @@ public static class SettingsStore
             catch { /* keep defaults */ }
         }
 
-        if (patch.ClearOpenrouterApiKey == true)
-            cur.OpenrouterApiKey = null;
-        else if (!string.IsNullOrWhiteSpace(patch.OpenrouterApiKey))
-            cur.OpenrouterApiKey = patch.OpenrouterApiKey.Trim();
+        cur.OpenrouterApiKey = null;
 
         if (patch.IdkTextModel is not null)
             cur.IdkTextModel = string.IsNullOrWhiteSpace(patch.IdkTextModel) ? null : patch.IdkTextModel.Trim();
@@ -317,6 +358,8 @@ public static class SettingsStore
             cur.OverlaySolidOnly = oo;
         if (patch.HideFromTaskbar is bool hf)
             cur.HideFromTaskbar = hf;
+        if (patch.HideFromScreenShare is bool hs)
+            cur.HideFromScreenShare = hs;
         if (patch.ActivateOnAnySelection is bool aos)
             cur.ActivateOnAnySelection = aos;
         if (patch.SelectionMode is SelectionActivationMode sm)
@@ -330,18 +373,19 @@ public static class SettingsStore
             cur.SelectionHotkeyModifiers = hm;
         if (patch.Theme is AppTheme th)
             cur.Theme = th.ToString();
+        if (patch.AskBarPlacement is AskBarPlacementMode place)
+            cur.AskBarPlacement = place.ToString();
 
         File.WriteAllText(FilePath, JsonSerializer.Serialize(cur, JsonOpts));
         SyncScreenCaptureFrom(cur);
         SyncOverlaySolidFrom(cur);
         SyncHideFromTaskbarFrom(cur);
+        SyncHideFromScreenShareFrom(cur);
         SyncThemeFrom(cur);
         SyncSelectionModeFrom(cur);
+        SyncAskBarPlacementFrom(cur);
 
-        if (patch.ClearOpenrouterApiKey == true)
-            Environment.SetEnvironmentVariable("OPENROUTER_API_KEY", null);
-        else if (!string.IsNullOrWhiteSpace(patch.OpenrouterApiKey))
-            Environment.SetEnvironmentVariable("OPENROUTER_API_KEY", patch.OpenrouterApiKey.Trim());
+        Environment.SetEnvironmentVariable("OPENROUTER_API_KEY", null);
 
         if (patch.IdkTextModel is not null)
             Environment.SetEnvironmentVariable("IDK_TEXT_MODEL", string.IsNullOrWhiteSpace(patch.IdkTextModel) ? null : patch.IdkTextModel.Trim());
@@ -378,10 +422,10 @@ public static class SettingsStore
             k.DeleteValue(AppRunName, false);
     }
 
-    /// <summary>Applies <see cref="HideFromTaskbar"/> without resizing or resetting the dashboard.</summary>
+    /// <summary>Applies taskbar visibility without resizing or resetting the dashboard. Screen-share hiding also keeps this window off the taskbar and Alt+Tab.</summary>
     public static void ApplyMainWindowTaskbarVisibility(System.Windows.Window window)
     {
-        var showInTaskbar = !HideFromTaskbar;
+        var showInTaskbar = !HideFromTaskbar && !HideFromScreenShare;
         if (window.ShowInTaskbar == showInTaskbar)
             return;
 
@@ -425,10 +469,12 @@ public record DashboardDto(
     bool ScreenCaptureEnabled,
     bool OverlaySolidOnly,
     bool HideFromTaskbar,
+    bool HideFromScreenShare,
     SelectionActivationMode SelectionMode,
     int SelectionHotkeyVk,
     int SelectionHotkeyModifiers,
-    AppTheme Theme);
+    AppTheme Theme,
+    AskBarPlacementMode AskBarPlacement);
 
 public class DashboardSaveDto
 {
@@ -440,9 +486,11 @@ public class DashboardSaveDto
     public bool? ScreenCaptureEnabled { get; set; }
     public bool? OverlaySolidOnly { get; set; }
     public bool? HideFromTaskbar { get; set; }
+    public bool? HideFromScreenShare { get; set; }
     public bool? ActivateOnAnySelection { get; set; }
     public SelectionActivationMode? SelectionMode { get; set; }
     public int? SelectionHotkeyVk { get; set; }
     public int? SelectionHotkeyModifiers { get; set; }
     public AppTheme? Theme { get; set; }
+    public AskBarPlacementMode? AskBarPlacement { get; set; }
 }

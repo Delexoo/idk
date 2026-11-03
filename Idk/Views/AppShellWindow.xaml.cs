@@ -24,6 +24,7 @@ public partial class AppShellWindow : Window
     {
         Host.Content = new DashboardView();
         SettingsStore.ApplyMainWindowTaskbarVisibility(this);
+        ScreenShareVisibility.Apply(this);
     }
 
     private void Shell_Activated(object? sender, EventArgs e)
@@ -61,6 +62,18 @@ public partial class AppShellWindow : Window
         WindowState = WindowState.Maximized;
         Show();
         Activate();
+    }
+
+    /// <summary>Open the dashboard on Billing.</summary>
+    public static void OpenBilling()
+    {
+        var shell = Instance ?? System.Windows.Application.Current?.MainWindow as AppShellWindow;
+        if (shell == null) return;
+        shell.WindowState = WindowState.Maximized;
+        shell.Show();
+        shell.Activate();
+        if (shell.Host.Content is DashboardView dash)
+            dash.ShowBillingFromOutside();
     }
 
     protected override void OnClosed(EventArgs e)

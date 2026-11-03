@@ -11,14 +11,24 @@ $stageName = $null
 $stage = $null
 foreach ($name in @("stage", "ship", "payload")) {
   $candidate = Join-Path $dist $name
-  if (Test-Path $candidate) { cmd /c "rmdir /s /q `"$candidate`"" }
-  if (-not (Test-Path $candidate)) {
-    $stageName = $name
-    $stage = $candidate
-    break
+  try {
+    if (Test-Path -LiteralPath $candidate) { cmd /c "rmdir /s /q `"$candidate`"" }
+    if (-not (Test-Path -LiteralPath $candidate)) {
+      $stageName = $name
+      $stage = $candidate
+      break
+    }
+  } catch {
+    continue
   }
 }
 if (-not $stage) { throw "Could not clear the installer payload. Close anything using dist-setup and try again." }
+
+powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "seal-openrouter.ps1")
+$sealed = Get-Content (Join-Path $root "Idk\Services\EmbeddedOpenRouter.g.cs") -Raw
+if ($sealed -notmatch "CipherBytes = (\d+)" -or [int]$Matches[1] -le 48) {
+  throw "The model key was not sealed. Add OPENROUTER_API_KEY to .env and package again."
+}
 
 dotnet publish (Join-Path $root "Idk\Idk.csproj") -c Release -r win-x64 --self-contained true -p:PublishReadyToRun=false -o $stage
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed ($LASTEXITCODE)." }

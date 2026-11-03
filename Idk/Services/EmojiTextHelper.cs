@@ -12,9 +12,21 @@ public static class EmojiTextHelper
     /// <summary>Segoe Fluent Emoji (Win11+) then Segoe UI Emoji — both support color glyphs.</summary>
     public static System.Windows.Media.FontFamily ColorEmojiFont { get; } = new("Segoe Fluent Emoji, Segoe UI Emoji");
 
-    private static readonly Regex EmojiRx = new(
-        @"\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|[\u200D\p{Extended_Pictographic}])*",
-        RegexOptions.Compiled);
+    private static readonly Regex EmojiRx = CreateEmojiRegex();
+
+    private static Regex CreateEmojiRegex()
+    {
+        const string unicode = @"\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|[\u200D\p{Extended_Pictographic}])*";
+        const string fallback = @"(?:\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDC00-\uDFFF]|[\u2600-\u27BF])(?:\uFE0F|\u200D(?:\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDC00-\uDFFF]|[\u2600-\u27BF]))*";
+        try
+        {
+            return new Regex(unicode, RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        }
+        catch (ArgumentException)
+        {
+            return new Regex(fallback, RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        }
+    }
 
     public static System.Windows.Media.FontFamily BodyWithEmojiFallback { get; } = new(
         new Uri("pack://application:,,,/"),

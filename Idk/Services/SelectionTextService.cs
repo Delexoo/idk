@@ -16,6 +16,64 @@ public static class SelectionTextService
         }
     }
 
+    /// <summary>
+    /// Reads the highlight from the focused control, its parents, and the control under the cursor.
+    /// Editors and browsers often keep the selection on an ancestor, not the focused node.
+    /// </summary>
+    public static string? TryGetSelectedTextNear(System.Windows.Point screenPoint)
+    {
+        var fromFocus = TryFromElementAndAncestors(TryFocused());
+        if (IsUsableSelection(fromFocus)) return fromFocus;
+
+        AutomationElement? underCursor = null;
+        try
+        {
+            underCursor = AutomationElement.FromPoint(screenPoint);
+        }
+        catch
+        {
+            underCursor = null;
+        }
+
+        var fromCursor = TryFromElementAndAncestors(underCursor);
+        return IsUsableSelection(fromCursor) ? fromCursor : null;
+    }
+
+    private static AutomationElement? TryFocused()
+    {
+        try
+        {
+            return AutomationElement.FocusedElement;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? TryFromElementAndAncestors(AutomationElement? el)
+    {
+        for (var i = 0; i < 14 && el != null; i++)
+        {
+            var text = TryGetSelectedTextFromElement(el)?.Trim();
+            if (IsUsableSelection(text)) return text;
+
+            try
+            {
+                el = TreeWalker.ControlViewWalker.GetParent(el);
+            }
+            catch
+            {
+                break;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsUsableSelection(string? text) =>
+        !string.IsNullOrWhiteSpace(text) && text.Trim().Length >= 2;
+
     /// <summary>Reads the current text selection from a specific element (e.g. the host editor), even when it is not the UIA focused element.</summary>
     public static string? TryGetSelectedTextFromElement(AutomationElement? el)
     {
@@ -68,6 +126,10 @@ public static class SelectionTextService
     {
         var expected = expectedText.Trim();
         if (expected.Length < 2) return false;
+
+        // The ask bar takes focus. Many apps then drop the highlight, which used to dismiss the bar immediately.
+        if (IsIdkProcessFocused(idkProcessId))
+            return true;
 
         if (sourceElement == null || !IsElementAvailable(sourceElement))
             return IsFocusedHighlightMatching(expected, idkProcessId);

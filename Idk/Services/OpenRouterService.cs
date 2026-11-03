@@ -29,21 +29,24 @@ public static class OpenRouterService
         "Begin immediately with the answer (definition, explanation, or example). Be clear and concise; use bullets only when they help. " +
         "Add about 1–2 emojis naturally when it fits. If a screenshot is attached, use it with the quoted text for context.";
 
-    public static string? ApiKeyOrNull() =>
-        SettingsStore.GetOpenRouterApiKeyOrNull();
+    public static bool IsReady => SealedApi.IsReady;
+
+    private static readonly Uri Endpoint = new("https://openrouter.ai/api/v1/chat/completions");
+
+    private static string? OpenKey() => SealedApi.Open();
 
     public static async IAsyncEnumerable<string> StreamChatAsync(
         string userMessage,
         string? visionPngBase64,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        if (!LicenseService.IsLicensed)
-            throw new InvalidOperationException("Buy idk for this computer in Settings before asking.");
+        if (!FreeAskQuota.CanAsk)
+            throw new InvalidOperationException(FreeAskQuota.BlockedMessage);
 
-        var key = ApiKeyOrNull();
+        var key = OpenKey();
         if (key == null)
         {
-            yield return "[Add your OpenRouter API key in the dashboard.]";
+            yield return "[Model access is not built into this copy.]";
             yield break;
         }
 
@@ -86,13 +89,28 @@ public static class OpenRouterService
         var payload = new { model, stream = true, max_tokens = 8192, messages };
         var json = JsonSerializer.Serialize(payload);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://openrouter.ai/api/v1/chat/completions");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
-        req.Headers.TryAddWithoutValidation("HTTP-Referer", "https://local.idk");
-        req.Headers.TryAddWithoutValidation("X-Title", "idk");
-        req.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var req = CreateRequest(key, json);
+        var resp = await Http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+        if (useVision && resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            resp.Dispose();
+            var textOnly = new
+            {
+                model = TextModel,
+                stream = true,
+                max_tokens = 8192,
+                messages = new object[]
+                {
+                    new { role = "system", content = SystemPrompt },
+                    new { role = "user", content = userMessage }
+                }
+            };
+            using var retry = CreateRequest(key, JsonSerializer.Serialize(textOnly));
+            resp = await Http.SendAsync(retry, HttpCompletionOption.ResponseHeadersRead, ct);
+        }
 
-        using var resp = await Http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+        using (resp)
+        {
         resp.EnsureSuccessStatusCode();
 
         await using var stream = await resp.Content.ReadAsStreamAsync(ct);
@@ -127,6 +145,7 @@ public static class OpenRouterService
                     yield return t;
             }
         }
+        }
     }
 
     /// <summary>Non-streaming completion for short tasks (e.g. chat titles).</summary>
@@ -136,7 +155,7 @@ public static class OpenRouterService
         int maxTokens = 32,
         CancellationToken ct = default)
     {
-        var key = ApiKeyOrNull();
+        var key = OpenKey();
         if (key == null) return null;
 
         var messages = new object[]
@@ -148,12 +167,7 @@ public static class OpenRouterService
         var payload = new { model = TextModel, stream = false, max_tokens = maxTokens, messages };
         var json = JsonSerializer.Serialize(payload);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "https://openrouter.ai/api/v1/chat/completions");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
-        req.Headers.TryAddWithoutValidation("HTTP-Referer", "https://local.idk");
-        req.Headers.TryAddWithoutValidation("X-Title", "idk");
-        req.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
+        using var req = CreateRequest(key, json);
         using var resp = await Http.SendAsync(req, ct);
         resp.EnsureSuccessStatusCode();
 
@@ -172,5 +186,19 @@ public static class OpenRouterService
             return content.GetString();
 
         return null;
+    }
+
+    private static HttpRequestMessage CreateRequest(string key, string json)
+    {
+        if (!string.Equals(Endpoint.Host, "openrouter.ai", StringComparison.OrdinalIgnoreCase)
+            || Endpoint.Scheme != "https")
+            throw new InvalidOperationException("Model access could not start.");
+
+        var req = new HttpRequestMessage(HttpMethod.Post, Endpoint);
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
+        req.Headers.TryAddWithoutValidation("HTTP-Referer", "https://local.idk");
+        req.Headers.TryAddWithoutValidation("X-Title", "idk");
+        req.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        return req;
     }
 }

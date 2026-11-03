@@ -55,7 +55,7 @@ public static class ChatTitleService
     /// <summary>Re-title chats that still look like the raw question (e.g. after an upgrade).</summary>
     public static async Task RefreshStaleTitlesAsync(CancellationToken ct = default)
     {
-        if (OpenRouterService.ApiKeyOrNull() == null) return;
+        if (!OpenRouterService.IsReady) return;
 
         foreach (var t in ChatHistoryStore.ReadAllUtcTicks())
         {
@@ -74,7 +74,7 @@ public static class ChatTitleService
         CancellationToken ct = default)
     {
         var heuristic = BuildHeuristicTitle(selection, question, answer);
-        if (OpenRouterService.ApiKeyOrNull() == null)
+        if (!OpenRouterService.IsReady)
             return heuristic;
 
         var sel = TrimForPrompt(SelectionSnippetFormatter.SanitizeForDisplay(selection, 280), 280);

@@ -25,6 +25,23 @@ internal static class WindowsRoundedWindowCorners
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
+    /// <summary>
+    /// Leave corners to the window's own drawing. The system mask is a hard stair-step and fights a capsule.
+    /// </summary>
+    public static void TryDoNotRound(Window window, bool suppressDwmBorder = false)
+    {
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
+            return;
+
+        var hwnd = new WindowInteropHelper(window).Handle;
+        if (hwnd == IntPtr.Zero) return;
+        var pref = 1; // DWMWCP_DONOTROUND
+        _ = DwmSetWindowAttribute(hwnd, DwmwaWindowCornerPreference, ref pref, sizeof(int));
+        if (!suppressDwmBorder) return;
+        var none = DwmColorNone;
+        _ = DwmSetWindowAttribute(hwnd, DwmwaBorderColor, ref none, sizeof(int));
+    }
+
     /// <param name="suppressDwmBorder">When true, clear the system border color (overlay pill: avoid gray rectangle around rounded chrome).</param>
     public static void TryApply(Window window, bool smallRadius = false, bool suppressDwmBorder = false)
     {

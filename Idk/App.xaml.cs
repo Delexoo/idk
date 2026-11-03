@@ -77,7 +77,7 @@ public partial class App : System.Windows.Application
     /// <summary>Starts overlay + selection listener when an API key is stored.</summary>
     internal static void EnsureIdkAssistantRunning()
     {
-        if (!LicenseService.IsLicensed || !SettingsStore.HasStoredApiKey()) return;
+        if (!OpenRouterService.IsReady) return;
         StartIdkAssistant();
     }
 
@@ -90,7 +90,11 @@ public partial class App : System.Windows.Application
         IsIdkAssistantRunning = true;
     }
 
-    internal static void NotifyOverlaySettingsChanged() => Overlay?.RefreshChromeSettings();
+    internal static void NotifyOverlaySettingsChanged()
+    {
+        Overlay?.RefreshChromeSettings();
+        ScreenShareVisibility.ApplyAll();
+    }
 
     internal static void StopIdkAssistant()
     {

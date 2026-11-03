@@ -118,6 +118,7 @@ public static class ModernDialog
         };
 
         WindowsRoundedWindowCorners.TryApply(dlg, smallRadius: true);
+        ScreenShareVisibility.Apply(dlg);
         dlg.ShowDialog();
         return confirmed;
     }

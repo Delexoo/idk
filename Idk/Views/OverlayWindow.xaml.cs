@@ -18,10 +18,10 @@ namespace Idk.Views;
 public partial class OverlayWindow : Window
 {
     private const double PillW = 128;
-    private const double PillH = 31;
-    private const double PillMinW = 118;
-    private const double PillMinH = 29;
-    private const double PillCornerRadius = 15.5;
+    private const double PillH = 32;
+    private const double PillMinW = 128;
+    private const double PillMinH = 32;
+    private const double PillCornerRadius = 16;
     private const double CardCornerRadius = 10;
     private const double CardW = 312;
     private const double CardH = 336;
@@ -47,6 +47,7 @@ public partial class OverlayWindow : Window
     private EventHandler? _followRenderingHandler;
 
     private const double MouseFollowGapBelow = 42;
+    private const double BottomCenterMargin = 18;
     private const string QuickMeaningQuestion = SettingsStore.DefaultQueryPlaceholder;
 
     private MouseFollowPillLayout.PillFollowSmoothState _pillFollowSmooth;
@@ -94,8 +95,12 @@ public partial class OverlayWindow : Window
 
     private void OnOverlaySourceInitialized(object? sender, EventArgs e)
     {
-        _ = new WindowInteropHelper(this).EnsureHandle();
-        WindowsRoundedWindowCorners.TryApply(this, smallRadius: true, suppressDwmBorder: true);
+        var hwnd = new WindowInteropHelper(this).EnsureHandle();
+        if (HwndSource.FromHwnd(hwnd) is HwndSource source)
+            source.AddHook(OverlayHitTestHook);
+        WindowsRoundedWindowCorners.TryDoNotRound(this, suppressDwmBorder: true);
+        ClearNativeWindowRegion();
+        ScreenShareVisibility.Apply(this);
         GlobalEscapeHotkey.Attach(this);
     }
 
@@ -108,6 +113,8 @@ public partial class OverlayWindow : Window
     {
         ApplyTheme();
         SyncQueryPlaceholder();
+        ApplyAskBarPlacement();
+        ScreenShareVisibility.Apply(this);
     }
 
     public void ApplyTheme()
@@ -118,9 +125,8 @@ public partial class OverlayWindow : Window
             return;
         }
 
-        var windowBg = ThemeManager.Brush("OverlayWindowBg");
-        Background = windowBg;
-        RootContentGrid.Background = windowBg;
+        Background = System.Windows.Media.Brushes.Transparent;
+        RootContentGrid.Background = System.Windows.Media.Brushes.Transparent;
         ShellCornerFill.Background = ThemeManager.Brush("OverlayChromeIdle");
         QueryBox.Foreground = ThemeManager.Brush("OverlayQueryText");
         QueryBox.CaretBrush = ThemeManager.Brush("OverlayQueryCaret");
@@ -179,8 +185,7 @@ public partial class OverlayWindow : Window
     }
 
     /// <summary>
-    /// Border.CornerRadius only affects the border's own fill; children still paint a rectangular box.
-    /// Clip to a matching rounded rect so the pill/card reads as rounded, and keep the underlay corners in sync.
+    /// The capsule is one antialiased border. Extra clips and a GDI window region cut that curve into stairs.
     /// </summary>
     private void SyncShellChromeShape(bool syncNativeRegion = true)
     {
@@ -190,93 +195,55 @@ public partial class OverlayWindow : Window
             return;
         }
 
-        var cr = ShellOuter.CornerRadius;
-        ShellCornerFill.CornerRadius = cr;
-
-        var w = ShellOuter.ActualWidth;
-        var h = ShellOuter.ActualHeight;
-        if (w < 1 || h < 1)
-        {
-            ShellOuter.Clip = null;
-            ShellVisualRoot.Clip = null;
-            RootContentGrid.Clip = null;
-            ClearNativeWindowRegion();
-            return;
-        }
-
-        var rx = Math.Max(0, cr.TopLeft);
-        var ry = Math.Max(0, cr.TopLeft);
-        rx = Math.Min(rx, w / 2);
-        ry = Math.Min(ry, h / 2);
-        var shellClip = new RectangleGeometry(new Rect(0, 0, w, h), rx, ry);
-        ShellOuter.Clip = shellClip;
-
-        // Clip the scaled enter-animation host so scaled corners never show a square silhouette.
-        var vw = ShellVisualRoot.ActualWidth > 1 ? ShellVisualRoot.ActualWidth : w;
-        var vh = ShellVisualRoot.ActualHeight > 1 ? ShellVisualRoot.ActualHeight : h;
-        var vr = Math.Min(rx, vw / 2);
-        ShellVisualRoot.Clip = new RectangleGeometry(new Rect(0, 0, vw, vh), vr, vr);
-
-        // Clip at the window root so transparent outer pixels match the pill/card radius (reduces "rectangle" look).
-        var rw = RootContentGrid.ActualWidth > 1 ? RootContentGrid.ActualWidth : ActualWidth;
-        var rh = RootContentGrid.ActualHeight > 1 ? RootContentGrid.ActualHeight : ActualHeight;
-        if (rw >= 1 && rh >= 1)
-        {
-            var rr = Math.Min(rx, Math.Min(rw / 2, rh / 2));
-            RootContentGrid.Clip = new RectangleGeometry(new Rect(0, 0, rw, rh), rr, rr);
-        }
-        else
-            RootContentGrid.Clip = null;
-
+        ShellCornerFill.CornerRadius = ShellOuter.CornerRadius;
+        ShellOuter.Clip = null;
+        ShellVisualRoot.Clip = null;
+        RootContentGrid.Clip = null;
         if (syncNativeRegion)
-            SyncNativeWindowRegion();
+            ClearNativeWindowRegion();
     }
 
-    [DllImport("gdi32.dll", SetLastError = true)]
-    private static extern IntPtr CreateRoundRectRgn(int nLeftRect, int nTopRect, int nRightRect, int nBottomRect, int nWidthEllipse, int nHeightEllipse);
+    private const int WmNcHitTest = 0x0084;
+    private const int HtTransparent = -1;
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
 
-    [DllImport("gdi32.dll")]
-    private static extern bool DeleteObject(IntPtr hObject);
-
     /// <summary>
-    /// WPF clips visuals to rounded corners, but the HWND still had a rectangular hit-test box.
-    /// Match the client area to a rounded region so transparent corners pass clicks through.
+    /// Corners outside the capsule stay transparent and click through. The curve itself is drawn by WPF.
     /// </summary>
-    private void SyncNativeWindowRegion()
+    private IntPtr OverlayHitTestHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        var hwnd = new WindowInteropHelper(this).Handle;
-        if (hwnd == IntPtr.Zero) return;
-
-        if (ActualWidth < 1 || ActualHeight < 1)
+        if (msg != WmNcHitTest || !IsVisible) return IntPtr.Zero;
+        try
         {
-            SetWindowRgn(hwnd, IntPtr.Zero, true);
-            return;
+            var lp = lParam.ToInt32();
+            var screen = new Point((short)(lp & 0xFFFF), (short)((lp >> 16) & 0xFFFF));
+            if (HitTestShell(PointFromScreen(screen))) return IntPtr.Zero;
+            handled = true;
+            return (IntPtr)HtTransparent;
         }
-
-        var m = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice ?? Matrix.Identity;
-        var wPix = Math.Max(1, (int)Math.Ceiling(ActualWidth * m.M11));
-        var hPix = Math.Max(1, (int)Math.Ceiling(ActualHeight * m.M22));
-
-        var rDip = ShellOuter.CornerRadius.TopLeft;
-        if (rDip < 0.5)
+        catch
         {
-            SetWindowRgn(hwnd, IntPtr.Zero, true);
-            return;
+            return IntPtr.Zero;
         }
+    }
 
-        var maxRDip = Math.Min(ActualWidth, ActualHeight) / 2.0;
-        var r = Math.Min(rDip, maxRDip);
-        var ellW = (int)Math.Clamp(Math.Round(2 * r * m.M11), 2, wPix);
-        var ellH = (int)Math.Clamp(Math.Round(2 * r * m.M22), 2, hPix);
-
-        var hrgn = CreateRoundRectRgn(0, 0, wPix, hPix, ellW, ellH);
-        if (hrgn == IntPtr.Zero) return;
-
-        if (SetWindowRgn(hwnd, hrgn, true) == 0)
-            DeleteObject(hrgn);
+    private bool HitTestShell(Point local)
+    {
+        var w = ActualWidth;
+        var h = ActualHeight;
+        if (w < 1 || h < 1) return false;
+        var r = Math.Min(ShellOuter.CornerRadius.TopLeft, Math.Min(w, h) / 2);
+        const double pad = 1.25;
+        if (local.X < -pad || local.Y < -pad || local.X > w + pad || local.Y > h + pad)
+            return false;
+        var cx = Math.Clamp(local.X, r, Math.Max(r, w - r));
+        var cy = Math.Clamp(local.Y, r, Math.Max(r, h - r));
+        var dx = local.X - cx;
+        var dy = local.Y - cy;
+        var reach = r + pad;
+        return dx * dx + dy * dy <= reach * reach;
     }
 
     private void ClearNativeWindowRegion()
@@ -284,6 +251,22 @@ public partial class OverlayWindow : Window
         var hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
             SetWindowRgn(hwnd, IntPtr.Zero, true);
+    }
+
+    private (double X, double Y) DeviceScale()
+    {
+        var m = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice ?? Matrix.Identity;
+        var sx = Math.Abs(m.M11) < 0.01 ? 1 : m.M11;
+        var sy = Math.Abs(m.M22) < 0.01 ? 1 : m.M22;
+        return (sx, sy);
+    }
+
+    /// <summary>Land the layered window on physical pixels so the capsule is not resampled.</summary>
+    private void MoveOverlayTo(double left, double top)
+    {
+        var (sx, sy) = DeviceScale();
+        Left = Math.Round(left * sx) / sx;
+        Top = Math.Round(top * sy) / sy;
     }
 
     private void StartSelectionWatch()
@@ -331,6 +314,13 @@ public partial class OverlayWindow : Window
             return;
         }
 
+        if (SettingsStore.AskBarPlacement == AskBarPlacementMode.BottomCenter)
+        {
+            StopMouseFollow();
+            PositionBottomCenter();
+            return;
+        }
+
         if (IsMouseOver) return;
         PositionFollowMouse();
     }
@@ -359,18 +349,54 @@ public partial class OverlayWindow : Window
             ref _pillFollowSmooth,
             out var left,
             out var top);
-        Left = left;
-        Top = top;
+        MoveOverlayTo(left, top);
+    }
+
+    /// <summary>Mini ask bar: follow the pointer, or stay locked at the bottom center of that screen.</summary>
+    private void ApplyAskBarPlacement()
+    {
+        if (!IsVisible || _hasMorphedToCard) return;
+
+        if (SettingsStore.AskBarPlacement == AskBarPlacementMode.BottomCenter)
+        {
+            StopMouseFollow();
+            PositionBottomCenter();
+            return;
+        }
+
+        PositionFollowMouse();
+        if (_followRenderingHandler == null)
+            StartMouseFollow();
+    }
+
+    private void PositionBottomCenter()
+    {
+        if (_hasMorphedToCard || !IsVisible) return;
+
+        var w = ActualWidth > 1 ? ActualWidth : PillW;
+        var h = ActualHeight > 1 ? ActualHeight : PillH;
+        void Place()
+        {
+            MouseFollowPillLayout.PlaceAtBottomCenter(
+                this,
+                _cursorFallbackPhysical,
+                w,
+                h,
+                BottomCenterMargin,
+                out var left,
+                out var top);
+            MoveOverlayTo(left, top);
+        }
+
+        Place();
+        UpdateLayout();
+        Place();
     }
 
     private void ResetShellEnterVisualImmediate()
     {
         ShellVisualRoot.BeginAnimation(UIElement.OpacityProperty, null);
-        ShellEnterScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-        ShellEnterScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
         ShellVisualRoot.Opacity = 1;
-        ShellEnterScale.ScaleX = 1;
-        ShellEnterScale.ScaleY = 1;
         PillTextChrome.BeginAnimation(UIElement.OpacityProperty, null);
         PillTextChrome.Opacity = 1;
     }
@@ -502,9 +528,8 @@ public partial class OverlayWindow : Window
         ResetShellEnterVisualImmediate();
         Show();
         UpdateLayout();
-        PositionFollowMouse();
         GlobalEscapeHotkey.TryRegister();
-        StartMouseFollow();
+        ApplyAskBarPlacement();
         StartSelectionWatch();
 
         Activate();
@@ -584,10 +609,13 @@ public partial class OverlayWindow : Window
     private void EnsureOnScreen()
     {
         var wa = SystemParameters.WorkArea;
-        if (Left + Width > wa.Right) Left = wa.Right - Width - 8;
-        if (Left < wa.Left) Left = wa.Left + 8;
-        if (Top + Height > wa.Bottom) Top = wa.Bottom - Height - 8;
-        if (Top < wa.Top) Top = wa.Top + 8;
+        var left = Left;
+        var top = Top;
+        if (left + Width > wa.Right) left = wa.Right - Width - 8;
+        if (left < wa.Left) left = wa.Left + 8;
+        if (top + Height > wa.Bottom) top = wa.Bottom - Height - 8;
+        if (top < wa.Top) top = wa.Top + 8;
+        MoveOverlayTo(left, top);
     }
 
     /// <summary>Place the window so it does not cover the source selection (prefer below, then above, then sides).</summary>
@@ -621,8 +649,7 @@ public partial class OverlayWindow : Window
                 left = wa.Left + margin;
             var top = dipRect.Top - 2;
             MouseFollowPillLayout.ClampWindowToWorkArea(ref left, ref top, w, h);
-            Left = left;
-            Top = top;
+            MoveOverlayTo(left, top);
             EnsureOnScreen();
             return;
         }
@@ -657,8 +684,7 @@ public partial class OverlayWindow : Window
             var pill = new Rect(left, top, w, h);
             if (MouseFollowPillLayout.PillOverlapsSelection(pill, dipRect, clearance))
                 continue;
-            Left = left;
-            Top = top;
+            MoveOverlayTo(left, top);
             EnsureOnScreen();
             if (!MouseFollowPillLayout.PillOverlapsSelection(new Rect(Left, Top, w, h), dipRect, clearance))
                 return;
@@ -669,8 +695,7 @@ public partial class OverlayWindow : Window
             var left = midX - w / 2;
             var top = dipRect.Bottom + gap;
             MouseFollowPillLayout.ClampWindowToWorkArea(ref left, ref top, w, h);
-            Left = left;
-            Top = top;
+            MoveOverlayTo(left, top);
             EnsureOnScreen();
         }
     }
@@ -693,8 +718,6 @@ public partial class OverlayWindow : Window
         BeginAnimation(WidthProperty, null);
         PillTextChrome.BeginAnimation(UIElement.OpacityProperty, null);
         ShellVisualRoot.BeginAnimation(UIElement.OpacityProperty, null);
-        ShellEnterScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-        ShellEnterScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
 
         StopSelectionWatch();
         StopMouseFollow();
@@ -739,14 +762,33 @@ public partial class OverlayWindow : Window
         _ = SubmitAsync(q);
     }
 
+    private async Task<bool> EnsureCanAskAsync()
+    {
+        if (FreeAskQuota.CanAsk)
+        {
+            UpgradeButton.Visibility = Visibility.Collapsed;
+            return true;
+        }
+
+        if (!_hasMorphedToCard && !await MorphToCardAsync())
+            return false;
+
+        ErrorText.Text = FreeAskQuota.BlockedMessage;
+        ErrorText.Visibility = Visibility.Visible;
+        UpgradeButton.Visibility = Visibility.Visible;
+        return false;
+    }
+
+    private void Upgrade_Click(object sender, RoutedEventArgs e)
+    {
+        HideOverlay(suppressReshow: true);
+        AppShellWindow.OpenBilling();
+    }
+
     private async Task SubmitAsync(string question)
     {
-        if (!LicenseService.IsLicensed)
-        {
-            ErrorText.Text = "Buy idk for this computer in Settings before asking.";
-            ErrorText.Visibility = Visibility.Visible;
+        if (!await EnsureCanAskAsync())
             return;
-        }
 
         _historyRecordEnabled = true;
         _historyTitleThisTurn = question;
@@ -764,6 +806,7 @@ public partial class OverlayWindow : Window
         await StreamAnswerAsync(userMsg, captureVision: vision, recordHistory: true);
         if (!string.IsNullOrWhiteSpace(_lastAnswer) && ErrorText.Visibility != Visibility.Visible)
         {
+            FreeAskQuota.RecordSuccess();
             _overlayThreadTurns.Add(new ChatThreadMessageDto { Role = "user", Text = question });
             _overlayThreadTurns.Add(new ChatThreadMessageDto { Role = "assistant", Text = _lastAnswer.Trim() });
             FollowUpBox.IsEnabled = true;
@@ -776,6 +819,8 @@ public partial class OverlayWindow : Window
         if (_overlayThreadTurns.Count == 0) return;
         var followUp = FollowUpBox.Text.Trim();
         if (followUp.Length == 0) return;
+        if (!await EnsureCanAskAsync())
+            return;
 
         var userMsg = ChatPromptBuilder.BuildFollowUpUserMessage(_selectionText, _overlayThreadTurns, followUp);
         _lastUserMessage = userMsg;
@@ -791,6 +836,7 @@ public partial class OverlayWindow : Window
         if (string.IsNullOrWhiteSpace(_lastAnswer) || ErrorText.Visibility == Visibility.Visible)
             return;
 
+        FreeAskQuota.RecordSuccess();
         var answer = _lastAnswer.Trim();
         _overlayThreadTurns.Add(new ChatThreadMessageDto { Role = "user", Text = followUp });
         _overlayThreadTurns.Add(new ChatThreadMessageDto { Role = "assistant", Text = answer });
@@ -914,6 +960,9 @@ public partial class OverlayWindow : Window
         {
             ErrorText.Text = ex.Message;
             ErrorText.Visibility = Visibility.Visible;
+            UpgradeButton.Visibility = ex.Message == FreeAskQuota.BlockedMessage
+                ? Visibility.Visible
+                : Visibility.Collapsed;
             StopOverlayTypingAnimation();
         }
         finally
@@ -937,12 +986,15 @@ public partial class OverlayWindow : Window
     private async Task RefineAsync(string instruction)
     {
         if (_lastUserMessage.Length == 0 || _lastAnswer.Length == 0) return;
+        if (!await EnsureCanAskAsync())
+            return;
         var combined = $"{_lastUserMessage}\n\n[Assistant]\n{_lastAnswer}\n\n[User]\n{instruction}";
         RemoveLastCardAssistantBubble();
         await StreamAnswerAsync(combined, captureVision: false, recordHistory: true);
         if (string.IsNullOrWhiteSpace(_lastAnswer) || ErrorText.Visibility == Visibility.Visible)
             return;
 
+        FreeAskQuota.RecordSuccess();
         var answer = _lastAnswer.Trim();
         for (var i = _overlayThreadTurns.Count - 1; i >= 0; i--)
         {

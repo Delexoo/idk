@@ -39,12 +39,75 @@
             <Setter Property="LineHeight" Value="19" />
         </Style>
 
-        <Style x:Key="DashNavGeneral" TargetType="Border">
+        <Style x:Key="DashNavItem" TargetType="RadioButton">
+            <Setter Property="Focusable" Value="False" />
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Foreground" Value="{DynamicResource DashInk}" />
+            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="12,10" />
             <Setter Property="Margin" Value="0,0,0,4" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}"
+                                RenderTransformOrigin="0.5,0.5"
+                                SnapsToDevicePixels="True">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DashNavHover}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DashNavPressed}" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleX" To="0.98" Duration="0:0:0.08" />
+                                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleY" To="0.98" Duration="0:0:0.08" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.14" />
+                                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.14" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DashNavSelected}" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="True" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DashNavHover}" />
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="True" />
+                                    <Condition Property="IsPressed" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DashNavPressed}" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="DashStatCard" TargetType="Border">
@@ -55,6 +118,11 @@
             <Setter Property="Padding" Value="18,16" />
             <Setter Property="Margin" Value="0,0,12,12" />
             <Setter Property="MinWidth" Value="140" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource DashCardHoverBorder}" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="DashStatValue" TargetType="TextBlock">
@@ -77,6 +145,11 @@
             <Setter Property="CornerRadius" Value="14" />
             <Setter Property="Padding" Value="22,20" />
             <Setter Property="Margin" Value="0,0,0,20" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource DashCardHoverBorder}" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="DashInsightPill" TargetType="Border">
@@ -102,6 +175,11 @@
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="16,14" />
             <Setter Property="Margin" Value="0,0,0,20" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource DashCardHoverBorder}" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="DashDetailBody" TargetType="TextBlock">
@@ -176,6 +254,11 @@
             <Setter Property="CornerRadius" Value="12" />
             <Setter Property="Padding" Value="20,18" />
             <Setter Property="Margin" Value="0,0,0,12" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource DashCardHoverBorder}" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="DashIconHost" TargetType="Border">
@@ -220,7 +303,11 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="7"
                                 Padding="{TemplateBinding Padding}"
+                                RenderTransformOrigin="0.5,0.5"
                                 SnapsToDevicePixels="True">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
                                               RecognizesAccessKey="True" />
@@ -233,6 +320,13 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Btn" Property="Background" Value="{DynamicResource DashModeSegmentHover}" />
                                 <Setter Property="Foreground" Value="{DynamicResource DashInk}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Btn" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.96" ScaleY="0.96" />
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
@@ -264,7 +358,11 @@
                                 Height="28"
                                 CornerRadius="14"
                                 Background="{DynamicResource DashSwitchTrackOff}"
+                                RenderTransformOrigin="0.5,0.5"
                                 SnapsToDevicePixels="True">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
                             <Border x:Name="Knob"
                                     Width="22"
                                     Height="22"
@@ -282,8 +380,22 @@
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Track" Property="Background" Value="{DynamicResource DashAccentBlue}" />
                             </Trigger>
-                            <Trigger Property="IsChecked" Value="False">
-                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource DashSwitchTrackOff}" />
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource DashSwitchTrackOffHover}" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="True" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource DashAccentBlueDark}" />
+                            </MultiTrigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Track" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.94" ScaleY="0.94" />
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -307,13 +419,42 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="9"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                Padding="{TemplateBinding Padding}"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
+                            <Grid>
+                                <Border x:Name="Wash"
+                                        Background="{DynamicResource DashHoverWash}"
+                                        Opacity="0"
+                                        CornerRadius="8"
+                                        IsHitTestVisible="False" />
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Grid>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Wash" Property="Opacity" Value="1" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Wash" Property="Background" Value="{DynamicResource DashPressWash}" />
+                                <Setter TargetName="Wash" Property="Opacity" Value="1" />
+                                <Setter TargetName="Chrome" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -337,17 +478,85 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{DynamicResource DashFabBg}"
+                        <Border x:Name="Chrome"
+                                Background="{DynamicResource DashFabBg}"
                                 BorderBrush="{DynamicResource DashFabBorder}"
                                 BorderThickness="1"
-                                CornerRadius="20">
-                            <TextBlock Text="&#xE946;"
-                                       FontFamily="{StaticResource IdkFontSymbol}"
-                                       FontSize="14"
-                                       Foreground="{DynamicResource DashMuted}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
+                                CornerRadius="20"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
+                            <Grid>
+                                <Border x:Name="Wash"
+                                        Background="{DynamicResource DashHoverWash}"
+                                        Opacity="0"
+                                        CornerRadius="20"
+                                        IsHitTestVisible="False" />
+                                <TextBlock Text="&#xE946;"
+                                           FontFamily="{StaticResource IdkFontSymbol}"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource DashMuted}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Grid>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Wash" Property="Opacity" Value="1" />
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource DashCardHoverBorder}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Wash" Property="Background" Value="{DynamicResource DashPressWash}" />
+                                <Setter TargetName="Wash" Property="Opacity" Value="1" />
+                                <Setter TargetName="Chrome" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.94" ScaleY="0.94" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DashCloseBtn" TargetType="Button">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource DashMuted}" />
+            <Setter Property="FontFamily" Value="{StaticResource IdkFontSymbol}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Chrome"
+                                Background="Transparent"
+                                CornerRadius="8"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource DashNavHover}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource DashNavPressed}" />
+                                <Setter TargetName="Chrome" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.92" ScaleY="0.92" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -450,7 +659,11 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="MoreBd"
                                 Background="Transparent"
-                                CornerRadius="6">
+                                CornerRadius="6"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
                             <TextBlock Text="&#xE712;"
                                        FontFamily="{StaticResource IdkFontSymbol}"
                                        FontSize="14"
@@ -462,6 +675,14 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="MoreBd" Property="Background" Value="{DynamicResource DashMenuHover}" />
                                 <Setter Property="Opacity" Value="1" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="MoreBd" Property="Background" Value="{DynamicResource DashNavPressed}" />
+                                <Setter TargetName="MoreBd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.92" ScaleY="0.92" />
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                             <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
                                          Value="True">
@@ -487,13 +708,39 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="8"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                Padding="{TemplateBinding Padding}"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
+                            <Grid>
+                                <Border x:Name="Wash"
+                                        Background="{DynamicResource DashHoverWash}"
+                                        Opacity="0"
+                                        CornerRadius="7"
+                                        IsHitTestVisible="False" />
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Grid>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Wash" Property="Opacity" Value="1" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Wash" Property="Background" Value="{DynamicResource DashPressWash}" />
+                                <Setter TargetName="Wash" Property="Opacity" Value="1" />
+                                <Setter TargetName="Chrome" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -560,6 +807,12 @@
                                         <ContentPresenter />
                                     </Border>
                                     <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Row" Property="Background" Value="{DynamicResource DashNavHover}" />
+                                        </Trigger>
+                                        <Trigger Property="IsMouseCaptured" Value="True">
+                                            <Setter TargetName="Row" Property="Background" Value="{DynamicResource DashNavPressed}" />
+                                        </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
                                             <Setter TargetName="Row" Property="Background" Value="{DynamicResource DashNavSelected}" />
                                         </Trigger>
@@ -605,6 +858,14 @@
             <Setter Property="CornerRadius" Value="9" />
             <Setter Property="Height" Value="36" />
             <Setter Property="Padding" Value="2,0" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource DashCardHoverBorder}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource DashAccentBlue}" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="DashFeedbackBox" TargetType="TextBox">
@@ -675,6 +936,14 @@
             <Setter Property="Padding" Value="20,0,8,0" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="UseLayoutRounding" Value="True" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource DashCardHoverBorder}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource DashAccentBlue}" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="DashChatAskBtn" TargetType="Button" BasedOn="{StaticResource DashReplayBtn}">
@@ -688,17 +957,46 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="17">
-                            <TextBlock Text="&#xE724;"
-                                       FontFamily="{StaticResource IdkFontSymbol}"
-                                       FontSize="13"
-                                       Foreground="{TemplateBinding Foreground}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
+                                CornerRadius="17"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
+                            <Grid>
+                                <Border x:Name="Wash"
+                                        Background="{DynamicResource DashHoverWash}"
+                                        Opacity="0"
+                                        CornerRadius="17"
+                                        IsHitTestVisible="False" />
+                                <TextBlock Text="&#xE724;"
+                                           FontFamily="{StaticResource IdkFontSymbol}"
+                                           FontSize="13"
+                                           Foreground="{TemplateBinding Foreground}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Grid>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Wash" Property="Opacity" Value="1" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Wash" Property="Background" Value="{DynamicResource DashPressWash}" />
+                                <Setter TargetName="Wash" Property="Opacity" Value="1" />
+                                <Setter TargetName="Chrome" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.92" ScaleY="0.92" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -762,13 +1060,15 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Border x:Name="DashboardNav"
-                            Grid.Row="0"
-                            Style="{StaticResource DashNavGeneral}"
-                            MouseLeftButtonUp="DashboardNav_Click">
+                    <RadioButton x:Name="DashboardNav"
+                                 Grid.Row="0"
+                                 GroupName="DashNav"
+                                 Style="{StaticResource DashNavItem}"
+                                 Click="DashboardNav_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource DashNavGlyph}" Text="&#xE9D2;" />
                             <TextBlock Text="Dashboard"
@@ -777,13 +1077,30 @@
                                        FontSize="14"
                                        FontWeight="SemiBold" />
                         </StackPanel>
-                    </Border>
+                    </RadioButton>
 
-                    <Border x:Name="SettingsNav"
-                            Grid.Row="1"
-                            Style="{StaticResource DashNavGeneral}"
-                            Margin="0,0,0,2"
-                            MouseLeftButtonUp="SettingsNav_Click">
+                    <RadioButton x:Name="BillingNav"
+                                 Grid.Row="1"
+                                 GroupName="DashNav"
+                                 Style="{StaticResource DashNavItem}"
+                                 Margin="0,0,0,2"
+                                 Click="BillingNav_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource DashNavGlyph}" Text="&#xE8C7;" />
+                            <TextBlock Text="Billing"
+                                       VerticalAlignment="Center"
+                                       Margin="10,0,0,0"
+                                       FontSize="14"
+                                       FontWeight="SemiBold" />
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton x:Name="SettingsNav"
+                                 Grid.Row="2"
+                                 GroupName="DashNav"
+                                 Style="{StaticResource DashNavItem}"
+                                 Margin="0,0,0,2"
+                                 Click="SettingsNav_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource DashNavGlyph}" Text="&#xE713;" />
                             <TextBlock Text="Settings"
@@ -792,13 +1109,14 @@
                                        FontSize="14"
                                        FontWeight="SemiBold" />
                         </StackPanel>
-                    </Border>
+                    </RadioButton>
 
-                    <Border x:Name="HowToUseNav"
-                            Grid.Row="2"
-                            Style="{StaticResource DashNavGeneral}"
-                            Margin="0,0,0,2"
-                            MouseLeftButtonUp="HowToUseNav_Click">
+                    <RadioButton x:Name="HowToUseNav"
+                                 Grid.Row="3"
+                                 GroupName="DashNav"
+                                 Style="{StaticResource DashNavItem}"
+                                 Margin="0,0,0,2"
+                                 Click="HowToUseNav_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource DashNavGlyph}" Text="&#xE946;" />
                             <TextBlock Text="How to use"
@@ -807,13 +1125,14 @@
                                        FontSize="14"
                                        FontWeight="SemiBold" />
                         </StackPanel>
-                    </Border>
+                    </RadioButton>
 
-                    <Border x:Name="FeedbackNav"
-                            Grid.Row="3"
-                            Style="{StaticResource DashNavGeneral}"
-                            Margin="0,0,0,2"
-                            MouseLeftButtonUp="FeedbackNav_Click">
+                    <RadioButton x:Name="FeedbackNav"
+                                 Grid.Row="4"
+                                 GroupName="DashNav"
+                                 Style="{StaticResource DashNavItem}"
+                                 Margin="0,0,0,2"
+                                 Click="FeedbackNav_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource DashNavGlyph}" Text="&#xED15;" />
                             <TextBlock Text="Send feedback"
@@ -822,12 +1141,12 @@
                                        FontSize="14"
                                        FontWeight="SemiBold" />
                         </StackPanel>
-                    </Border>
+                    </RadioButton>
 
-                    <TextBlock Grid.Row="4" Text="Chats" Style="{StaticResource DashSidebarSection}" Margin="4,8,0,8" />
+                    <TextBlock Grid.Row="5" Text="Chats" Style="{StaticResource DashSidebarSection}" Margin="4,8,0,8" />
 
                     <ScrollViewer x:Name="ChatHistoryScroller"
-                                  Grid.Row="5"
+                                  Grid.Row="6"
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
                                   PreviewMouseWheel="SmoothScroll_PreviewMouseWheel">
@@ -868,34 +1187,17 @@
                         <StackPanel>
                             <TextBlock Text="This computer" Style="{StaticResource DashRowLabel}" />
                             <TextBlock x:Name="DashboardLicenseStatusText"
-                                       Text="idk is $5.99 once for this computer."
+                                       Text="idk Pro is $3 a month for this computer."
                                        Style="{StaticResource DashRowDesc}"
                                        Margin="0,6,0,0" />
-                            <TextBlock Text="One purchase covers this computer. Copying the app or the license file does not license another computer."
+                            <TextBlock x:Name="DashboardFreeAsksText"
+                                       Text="5 free asks left. Then idk Pro is required."
                                        Style="{StaticResource DashRowDesc}"
                                        Margin="0,6,0,0" />
-                            <TextBlock Text="Promotional code" Style="{StaticResource DashRowDesc}" Margin="0,14,0,0" />
-                            <Border x:Name="DashboardLicensePromoPanel" Style="{StaticResource DashApiKeyHost}" Margin="0,8,0,0">
-                                <TextBox x:Name="DashboardLicensePromoInput"
-                                         BorderThickness="0"
-                                         Background="Transparent"
-                                         Padding="12,8"
-                                         FontSize="13"
-                                         Foreground="{DynamicResource DashInk}"
-                                         CaretBrush="{DynamicResource DashInk}" />
-                            </Border>
-                            <StackPanel Orientation="Horizontal">
-                                <Button x:Name="DashboardLicenseBuyButton"
-                                        Content="Buy for this computer"
-                                        Style="{StaticResource DashLicenseBtn}"
-                                        Click="LicenseBuy_Click" />
-                                <Button x:Name="DashboardLicenseCheckButton"
-                                        Content="Check this computer"
-                                        Style="{StaticResource DashReplayBtn}"
-                                        HorizontalAlignment="Left"
-                                        Margin="0,14,0,0"
-                                        Click="LicenseCheck_Click" />
-                            </StackPanel>
+                            <Button x:Name="DashboardLicenseBuyButton"
+                                    Content="Upgrade"
+                                    Style="{StaticResource DashLicenseBtn}"
+                                    Click="OpenBilling_Click" />
                         </StackPanel>
                     </Border>
 
@@ -959,7 +1261,7 @@
                         <Border Style="{StaticResource DashStatCard}">
                             <StackPanel>
                                 <TextBlock x:Name="StatApiKey" Text="—" Style="{StaticResource DashStatValue}" FontSize="22" />
-                                <TextBlock Text="API key" Style="{StaticResource DashStatLabel}" />
+                                <TextBlock Text="Model" Style="{StaticResource DashStatLabel}" />
                             </StackPanel>
                         </Border>
                     </WrapPanel>
@@ -1132,7 +1434,7 @@
                         </Border>
                         <StackPanel Grid.Row="1" Margin="4,8,0,0">
                             <TextBlock x:Name="ChatFollowUpHint"
-                                       Text="Add your OpenRouter API key in Settings to ask follow-up questions."
+                                       Text="Subscribe to idk Pro in Settings before asking."
                                        Foreground="{DynamicResource DashSubtle}"
                                        FontSize="12"
                                        TextWrapping="Wrap"
@@ -1147,10 +1449,70 @@
                                        FontSize="12"
                                        TextWrapping="Wrap"
                                        Visibility="Collapsed" />
+                            <Button x:Name="ChatFollowUpUpgrade"
+                                    Content="Upgrade"
+                                    Style="{StaticResource DashLicenseBtn}"
+                                    Visibility="Collapsed"
+                                    Click="OpenBilling_Click" />
                         </StackPanel>
                     </Grid>
                 </Border>
             </Grid>
+
+            <ScrollViewer x:Name="ScrollBilling"
+                          Padding="48,44,56,56"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Visibility="Collapsed">
+                <StackPanel MaxWidth="640" HorizontalAlignment="Center">
+                    <TextBlock Text="Billing"
+                               Style="{StaticResource DashPageTitle}"
+                               TextAlignment="Center" />
+                    <TextBlock Text="Five asks are free on this computer. idk Pro is $3 a month after that."
+                               Style="{StaticResource DashPageSub}"
+                               TextAlignment="Center"
+                               Margin="0,10,0,36" />
+
+                    <Border Style="{StaticResource DashSettingCard}">
+                        <StackPanel>
+                            <TextBlock Text="This computer" Style="{StaticResource DashRowLabel}" />
+                            <TextBlock x:Name="LicenseStatusText"
+                                       Text="idk Pro is $3 a month for this computer."
+                                       Style="{StaticResource DashRowDesc}"
+                                       Margin="0,6,0,0" />
+                            <TextBlock x:Name="BillingFreeAsksText"
+                                       Text="5 free asks left. Then idk Pro is required."
+                                       Style="{StaticResource DashRowDesc}"
+                                       Margin="0,6,0,0" />
+                            <TextBlock Text="The subscription covers this computer while it is active. Copying the app or the license file does not unlock another computer."
+                                       Style="{StaticResource DashRowDesc}"
+                                       Margin="0,6,0,0" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="LicenseBuyButton"
+                                        Content="Upgrade"
+                                        Style="{StaticResource DashLicenseBtn}"
+                                        Click="LicenseBuy_Click" />
+                                <Button x:Name="LicenseCheckButton"
+                                        Content="Check this computer"
+                                        Style="{StaticResource DashReplayBtn}"
+                                        HorizontalAlignment="Left"
+                                        Margin="0,14,0,0"
+                                        Click="LicenseCheck_Click" />
+                                <Button x:Name="LicenseManageButton"
+                                        Content="Manage subscription"
+                                        Style="{StaticResource DashReplayBtn}"
+                                        HorizontalAlignment="Left"
+                                        Margin="8,14,0,0"
+                                        Visibility="Collapsed"
+                                        Click="LicenseManage_Click" />
+                            </StackPanel>
+                            <TextBlock x:Name="LicenseVersionText"
+                                       Style="{StaticResource DashRowDesc}"
+                                       Margin="0,14,0,0" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
 
             <ScrollViewer x:Name="ScrollSettings"
                           Padding="48,44,56,56"
@@ -1161,48 +1523,21 @@
                     <TextBlock Text="Settings"
                                Style="{StaticResource DashPageTitle}"
                                TextAlignment="Center" />
-                    <TextBlock Text="A license is $5.99 once for this computer. idk starts after this computer is licensed and an API key is saved."
+                    <TextBlock Text="Selection, appearance, and startup."
                                Style="{StaticResource DashPageSub}"
                                TextAlignment="Center"
                                Margin="0,10,0,36" />
 
                     <Border Style="{StaticResource DashSettingCard}">
                         <StackPanel>
-                            <TextBlock Text="This computer" Style="{StaticResource DashRowLabel}" />
-                            <TextBlock x:Name="LicenseStatusText"
-                                       Text="idk is $5.99 once for this computer."
+                            <TextBlock Text="Plan" Style="{StaticResource DashRowLabel}" />
+                            <TextBlock x:Name="SettingsPlanSummary"
+                                       Text="5 free asks left. Then idk Pro is required."
                                        Style="{StaticResource DashRowDesc}"
                                        Margin="0,6,0,0" />
-                            <TextBlock Text="One purchase covers this computer. Copying the app or the license file does not license another computer."
-                                       Style="{StaticResource DashRowDesc}"
-                                       Margin="0,6,0,0" />
-                            <StackPanel x:Name="LicensePromoPanel">
-                                <TextBlock Text="Promotional code" Style="{StaticResource DashRowDesc}" Margin="0,14,0,0" />
-                                <Border Style="{StaticResource DashApiKeyHost}" Margin="0,8,0,0">
-                                    <TextBox x:Name="LicensePromoInput"
-                                             BorderThickness="0"
-                                             Background="Transparent"
-                                             Padding="12,8"
-                                             FontSize="13"
-                                             Foreground="{DynamicResource DashInk}"
-                                             CaretBrush="{DynamicResource DashInk}" />
-                                </Border>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <Button x:Name="LicenseBuyButton"
-                                        Content="Buy for this computer"
-                                        Style="{StaticResource DashLicenseBtn}"
-                                        Click="LicenseBuy_Click" />
-                                <Button x:Name="LicenseCheckButton"
-                                        Content="Check this computer"
-                                        Style="{StaticResource DashReplayBtn}"
-                                        HorizontalAlignment="Left"
-                                        Margin="0,14,0,0"
-                                        Click="LicenseCheck_Click" />
-                            </StackPanel>
-                            <TextBlock x:Name="LicenseVersionText"
-                                       Style="{StaticResource DashRowDesc}"
-                                       Margin="0,14,0,0" />
+                            <Button Content="Open billing"
+                                    Style="{StaticResource DashLicenseBtn}"
+                                    Click="OpenBilling_Click" />
                         </StackPanel>
                     </Border>
 
@@ -1244,6 +1579,47 @@
                                 </StackPanel>
                             </Border>
                         </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource DashSettingCard}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Style="{StaticResource DashIconHost}">
+                                    <TextBlock Style="{StaticResource DashIconGlyph}" Text="&#xE721;" />
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="Search bar"
+                                               Style="{StaticResource DashRowLabel}" />
+                                    <TextBlock x:Name="AskBarPlacementDesc"
+                                               Style="{StaticResource DashRowDesc}"
+                                               Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Grid>
+                            <Border HorizontalAlignment="Left"
+                                    Margin="50,14,0,0"
+                                    Background="{DynamicResource DashSegmentTrackBg}"
+                                    BorderBrush="{DynamicResource DashSegmentTrackBorder}"
+                                    BorderThickness="1"
+                                    CornerRadius="9"
+                                    Padding="3">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="AskBarFollowCursor"
+                                                 GroupName="IdkAskBarPlacement"
+                                                 Content="Follow cursor"
+                                                 Style="{StaticResource DashModeSegment}"
+                                                 Checked="AskBarPlacementChoice_Changed" />
+                                    <RadioButton x:Name="AskBarBottomCenter"
+                                                 GroupName="IdkAskBarPlacement"
+                                                 Content="Bottom center"
+                                                 Style="{StaticResource DashModeSegment}"
+                                                 Checked="AskBarPlacementChoice_Changed" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                     </Border>
 
                     <Border Style="{StaticResource DashSettingCard}">
@@ -1295,33 +1671,11 @@
                             <Border Grid.Column="0" Style="{StaticResource DashIconHost}">
                                 <TextBlock Style="{StaticResource DashIconGlyph}" Text="&#xE785;" />
                             </Border>
-                            <StackPanel Grid.Column="1">
-                                <TextBlock Text="OpenRouter API key" Style="{StaticResource DashRowLabel}" />
-                                <TextBlock Text="Paste your key from openrouter.ai. idk saves it locally and picks models for you."
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Model access" Style="{StaticResource DashRowLabel}" />
+                                <TextBlock Text="Asking uses the model built into idk. The key stays sealed inside the app and is not saved in your settings."
                                            Style="{StaticResource DashRowDesc}"
                                            Margin="0,4,0,0" />
-                                <Grid Margin="0,14,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Style="{StaticResource DashApiKeyHost}">
-                                        <PasswordBox x:Name="ApiKeyInput"
-                                                     Style="{StaticResource DashApiKeyBox}"
-                                                     PasswordChanged="ApiKeyInput_PasswordChanged"
-                                                     LostFocus="ApiKeyInput_LostFocus"
-                                                     KeyDown="ApiKeyInput_KeyDown" />
-                                    </Border>
-                                    <Button Grid.Column="1"
-                                            x:Name="ApiKeyResetButton"
-                                            Style="{StaticResource DashApiResetBtn}"
-                                            Content="Reset"
-                                            Margin="10,0,0,0"
-                                            Click="ApiKeyReset_Click" />
-                                </Grid>
-                                <TextBlock x:Name="ApiKeyStatus"
-                                           Style="{StaticResource DashRowDesc}"
-                                           Margin="0,8,0,0" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -1400,6 +1754,29 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Style="{StaticResource DashIconHost}">
+                                <TextBlock Style="{StaticResource DashIconGlyph}" Text="&#xE890;" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,20,0">
+                                <TextBlock Text="Hide from screen share" Style="{StaticResource DashRowLabel}" />
+                                <TextBlock Text="Screenshots, screen shares, and streams skip idk windows, and this window leaves the taskbar and Alt+Tab. You still see idk. Task Manager still lists it."
+                                           Style="{StaticResource DashRowDesc}"
+                                           Margin="0,4,0,0" />
+                            </StackPanel>
+                            <ToggleButton x:Name="HideFromScreenShareToggle"
+                                          Grid.Column="2"
+                                          Style="{StaticResource DashSwitch}"
+                                          Click="HideFromScreenShareToggle_Click" />
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource DashSettingCard}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Border Grid.Column="0" Style="{StaticResource DashIconHost}">
                                 <TextBlock Style="{StaticResource DashIconGlyph}" Text="&#xE8F2;" />
@@ -1439,10 +1816,44 @@
                     <TextBlock Text="How to use idk"
                                Style="{StaticResource DashPageTitle}"
                                TextAlignment="Center" />
-                    <TextBlock Text="A quick walkthrough from API key to your first answer."
+                    <TextBlock Text="A one-minute test with a few ridiculous words."
                                Style="{StaticResource DashPageSub}"
                                TextAlignment="Center"
                                Margin="0,10,0,28" />
+                    <Border Style="{StaticResource DashDetailBlock}">
+                        <StackPanel>
+                            <TextBlock Text="Try it"
+                                       Style="{StaticResource DashRowLabel}" />
+                            <TextBlock x:Name="HowToUseTryPrompt"
+                                       Style="{StaticResource DashRowDesc}"
+                                       Margin="0,6,0,0" />
+                            <Border Background="{DynamicResource DashApiKeyHostBg}"
+                                    BorderBrush="{DynamicResource DashApiKeyHostBorder}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="16,14"
+                                    Margin="0,14,0,0">
+                                <TextBox x:Name="HowToUsePracticeText"
+                                         IsReadOnly="True"
+                                         IsReadOnlyCaretVisible="False"
+                                         IsUndoEnabled="False"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         Padding="0"
+                                         FontSize="16"
+                                         Foreground="{DynamicResource DashInk}"
+                                         CaretBrush="Transparent"
+                                         SelectionBrush="{DynamicResource DashAccentBlue}"
+                                         SelectionOpacity="0.35"
+                                         Cursor="IBeam"
+                                         FocusVisualStyle="{x:Null}"
+                                         SpellCheck.IsEnabled="False"
+                                         Text="A perspicacious owl kept a sesquipedalian dictionary beside an ephemeral fountain, tucked inside a labyrinthine garden that smelled of petrichor after the rain." />
+                            </Border>
+                        </StackPanel>
+                    </Border>
                     <Border Style="{StaticResource DashDetailBlock}">
                         <TextBlock x:Name="HowToUseBody"
                                    Style="{StaticResource DashDetailBody}" />
@@ -1537,17 +1948,9 @@
                                    Foreground="{DynamicResource DashInk}"
                                    VerticalAlignment="Center" />
                         <Button Content="&#xE711;"
+                                Style="{StaticResource DashCloseBtn}"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
-                                Width="28"
-                                Height="28"
-                                Padding="0"
-                                Cursor="Hand"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Foreground="{DynamicResource DashMuted}"
-                                FontFamily="{StaticResource IdkFontSymbol}"
-                                FontSize="12"
                                 Click="ShortcutsOverlayClose_Click" />
                     </Grid>
                     <Border Style="{StaticResource DashShortcutRow}">

@@ -5,20 +5,25 @@
         Title=""
         Icon="pack://application:,,,/Assets/idk.ico"
         Width="128"
-        Height="31"
-        MinWidth="118"
-        MinHeight="29"
+        Height="32"
+        MinWidth="128"
+        MinHeight="32"
         WindowStyle="None"
         AllowsTransparency="True"
-        Background="#181818"
+        Background="Transparent"
         Topmost="True"
         ShowInTaskbar="False"
         ShowActivated="True"
         Focusable="True"
         FocusVisualStyle="{x:Null}"
         ResizeMode="NoResize"
-        SnapsToDevicePixels="False"
-        UseLayoutRounding="False"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="Grayscale"
+        TextOptions.TextHintingMode="Fixed"
+        RenderOptions.BitmapScalingMode="HighQuality"
+        RenderOptions.EdgeMode="Unspecified"
         FontFamily="{StaticResource IdkFontBody}">
     <Window.Resources>
         <Style x:Key="OverlayToolbarBtnBase" TargetType="Button">
@@ -133,36 +138,33 @@
         </Style>
     </Window.Resources>
 
-    <!-- Opaque #181818 under rounded clip so HWND corners are not transparent (no white wedges / gray frame). -->
+    <!-- Transparent outside the capsule so WPF can antialias the curve. A hard window region stair-steps the ends. -->
     <Grid x:Name="RootContentGrid"
-          Background="#181818"
-          SnapsToDevicePixels="False"
-          UseLayoutRounding="False">
+          Background="Transparent"
+          SnapsToDevicePixels="True"
+          UseLayoutRounding="True">
         <Grid x:Name="ShellVisualRoot"
-              RenderTransformOrigin="0.5,0.5"
               Opacity="1"
-              SnapsToDevicePixels="False"
-              UseLayoutRounding="False">
-            <Grid.RenderTransform>
-                <ScaleTransform x:Name="ShellEnterScale" ScaleX="1" ScaleY="1" />
-            </Grid.RenderTransform>
+              SnapsToDevicePixels="True"
+              UseLayoutRounding="True">
         <Border x:Name="ShellCornerFill"
+                Visibility="Collapsed"
                 Background="#181818"
-                CornerRadius="15.5"
-                SnapsToDevicePixels="False"
-                UseLayoutRounding="False" />
+                CornerRadius="16"
+                SnapsToDevicePixels="True"
+                UseLayoutRounding="True" />
         <Border x:Name="ShellOuter"
             ClipToBounds="True"
-            CornerRadius="15.5"
+            CornerRadius="16"
             Background="#181818"
             BorderBrush="Transparent"
             BorderThickness="0"
-            SnapsToDevicePixels="False"
+            SnapsToDevicePixels="True"
             IsHitTestVisible="True"
-            UseLayoutRounding="False">
+            UseLayoutRounding="True">
         <Grid>
             <Grid x:Name="PillPanel"
-                  Margin="6,0,6,0"
+                  Margin="10,0,4,0"
                   Background="Transparent"
                   MouseDown="PillPanel_OnMouseDown">
                 <Grid.ColumnDefinitions>
@@ -170,59 +172,31 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Viewbox Grid.Column="0"
-                         Width="12"
-                         Height="12"
-                         Margin="0,0,5,0"
-                         VerticalAlignment="Center"
-                         HorizontalAlignment="Left"
-                         IsHitTestVisible="False">
-                    <Canvas Width="20" Height="20" SnapsToDevicePixels="True">
-                        <Ellipse Canvas.Left="1"
-                                 Canvas.Top="2"
-                                 Width="9.5"
-                                 Height="9.5"
-                                 Stroke="#8A8A8A"
-                                 StrokeThickness="1.35"
-                                 Fill="Transparent">
-                            <Ellipse.Style>
-                                <Style TargetType="Ellipse">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsMouseOver, ElementName=ShellOuter}" Value="True">
-                                            <Setter Property="Stroke" Value="#A8A8A8" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsKeyboardFocusWithin, ElementName=RootWin}" Value="True">
-                                            <Setter Property="Stroke" Value="#A8A8A8" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Ellipse.Style>
-                        </Ellipse>
-                        <Line X1="10.5"
-                              Y1="10.5"
-                              X2="16.5"
-                              Y2="16.5"
-                              Stroke="#8A8A8A"
-                              StrokeThickness="1.35"
-                              StrokeStartLineCap="Round"
-                              StrokeEndLineCap="Round">
-                            <Line.Style>
-                                <Style TargetType="Line">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsMouseOver, ElementName=ShellOuter}" Value="True">
-                                            <Setter Property="Stroke" Value="#A8A8A8" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsKeyboardFocusWithin, ElementName=RootWin}" Value="True">
-                                            <Setter Property="Stroke" Value="#A8A8A8" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Line.Style>
-                        </Line>
-                    </Canvas>
-                </Viewbox>
+                <TextBlock Grid.Column="0"
+                           Text="&#xE721;"
+                           FontFamily="{StaticResource IdkFontSymbol}"
+                           FontSize="12"
+                           Margin="2,0,8,0"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           TextOptions.TextFormattingMode="Display"
+                           TextOptions.TextRenderingMode="Grayscale">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="#8A8A8A" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMouseOver, ElementName=ShellOuter}" Value="True">
+                                    <Setter Property="Foreground" Value="#B0B0B0" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsKeyboardFocusWithin, ElementName=RootWin}" Value="True">
+                                    <Setter Property="Foreground" Value="#B0B0B0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
 
-                <Grid x:Name="PillTextChrome" Grid.Column="1" VerticalAlignment="Stretch" Opacity="1">
+                <Grid x:Name="PillTextChrome" Grid.Column="1" Margin="0,0,10,0" VerticalAlignment="Stretch" Opacity="1">
                     <TextBlock x:Name="QueryPlaceholder"
                                Text="Ask Anything!"
                                Margin="0,0,0,0"
@@ -296,6 +270,47 @@
                                    FontSize="12"
                                    TextWrapping="Wrap"
                                    Margin="0,4,0,0" />
+                        <Button x:Name="UpgradeButton"
+                                Content="Upgrade"
+                                Visibility="Collapsed"
+                                HorizontalAlignment="Left"
+                                Margin="0,10,0,0"
+                                Padding="14,7"
+                                Cursor="Hand"
+                                Foreground="White"
+                                Background="#2563EB"
+                                BorderBrush="#1D4ED8"
+                                BorderThickness="1"
+                                Click="Upgrade_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Chrome"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Padding="{TemplateBinding Padding}"
+                                            RenderTransformOrigin="0.5,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform ScaleX="1" ScaleY="1" />
+                                        </Border.RenderTransform>
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Chrome" Property="Background" Value="#1D4ED8" />
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="Chrome" Property="RenderTransform">
+                                                <Setter.Value>
+                                                    <ScaleTransform ScaleX="0.97" ScaleY="0.97" />
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
                     </StackPanel>
                 </ScrollViewer>
                 <Border x:Name="CardFollowUpBar"

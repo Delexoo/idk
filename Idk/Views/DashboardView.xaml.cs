@@ -25,9 +25,8 @@ public partial class DashboardView : System.Windows.Controls.UserControl
     private System.Windows.Shapes.Ellipse[]? _typingDots;
     private DispatcherTimer? _typingTimer;
     private int _typingFrame;
-    private bool _apiKeyDirty;
-    private bool _apiKeyUiSync;
     private bool _suppressHistorySelection;
+    private bool _openBillingWhenLoaded;
 
     private Window? ShellOwner => Window.GetWindow(this);
 
@@ -39,6 +38,7 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         LicenseService.Changed += OnLicenseChanged;
+        FreeAskQuota.Changed += OnLicenseChanged;
         ChatHistoryStore.ChatHistoryChanged += OnChatHistoryFromOverlay;
         ThemeManager.ThemeChanged += OnThemeChanged;
     }
@@ -47,6 +47,7 @@ public partial class DashboardView : System.Windows.Controls.UserControl
     {
         ChatHistoryStore.ChatHistoryChanged -= OnChatHistoryFromOverlay;
         LicenseService.Changed -= OnLicenseChanged;
+        FreeAskQuota.Changed -= OnLicenseChanged;
         ThemeManager.ThemeChanged -= OnThemeChanged;
     }
 
@@ -134,77 +135,17 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         Refresh();
         RefreshChatHistory();
             RefreshDashboard();
-            ShowDashboardView();
-            if (SettingsStore.HasStoredApiKey())
+            if (_openBillingWhenLoaded)
+                ShowBillingView();
+            else
+                ShowDashboardView();
+            if (OpenRouterService.IsReady)
                 _ = ChatTitleService.RefreshStaleTitlesAsync();
         }
         catch (Exception ex)
         {
             CrashLog.Write(ex, "DashboardView.OnLoaded");
             throw;
-        }
-    }
-
-    private void ApiKeyInput_PasswordChanged(object sender, RoutedEventArgs e)
-    {
-        if (_apiKeyUiSync) return;
-        _apiKeyDirty = true;
-    }
-
-    private void ApiKeyInput_LostFocus(object sender, RoutedEventArgs e) =>
-        TrySaveApiKeyFromUi(showErrors: true);
-
-    private void ApiKeyInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-    {
-        if (e.Key != System.Windows.Input.Key.Enter) return;
-        TrySaveApiKeyFromUi(showErrors: true);
-        e.Handled = true;
-    }
-
-    private void ApiKeyReset_Click(object sender, RoutedEventArgs e)
-    {
-        ErrorBanner.Visibility = Visibility.Collapsed;
-        try
-        {
-            SettingsStore.SaveDashboard(new DashboardSaveDto { ClearOpenrouterApiKey = true });
-            global::Idk.App.StopIdkAssistant();
-            _apiKeyDirty = false;
-            SyncApiKeyUi();
-            RefreshDashboard();
-        }
-        catch (Exception ex)
-        {
-            ShowError(ex.Message);
-        }
-    }
-
-    private bool TrySaveApiKeyFromUi(bool showErrors)
-    {
-        if (!_apiKeyDirty) return true;
-
-        var key = ApiKeyInput.Password.Trim();
-        if (key.Length == 0)
-        {
-            _apiKeyDirty = false;
-            return true;
-        }
-
-        ErrorBanner.Visibility = Visibility.Collapsed;
-        try
-        {
-            SettingsStore.SaveDashboard(new DashboardSaveDto { OpenrouterApiKey = key });
-            _apiKeyDirty = false;
-            SyncApiKeyUi(clearInput: true);
-            global::Idk.App.EnsureIdkAssistantRunning();
-            RefreshDashboard();
-            SyncChatFollowUpChrome();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            if (showErrors)
-                ShowError(ex.Message);
-            return false;
         }
     }
 
@@ -249,9 +190,9 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         SaveAllSettingsFromUi();
     }
 
-    private void HowToUseNav_Click(object sender, MouseButtonEventArgs e) => ShowHowToUseView();
+    private void HowToUseNav_Click(object sender, RoutedEventArgs e) => ShowHowToUseView();
 
-    private void FeedbackNav_Click(object sender, MouseButtonEventArgs e) => ShowFeedbackView();
+    private void FeedbackNav_Click(object sender, RoutedEventArgs e) => ShowFeedbackView();
 
     private void FeedbackSend_Click(object sender, RoutedEventArgs e)
     {
@@ -287,7 +228,14 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         SaveAllSettingsFromUi();
     }
 
+    private void HideFromScreenShareToggle_Click(object sender, RoutedEventArgs e)
+    {
+        SnapDashSwitchKnob(HideFromScreenShareToggle, HideFromScreenShareToggle.IsChecked == true);
+        SaveAllSettingsFromUi();
+    }
+
     private bool _syncingSelectionModeUi;
+    private bool _syncingAskBarPlacementUi;
     private bool _syncingThemeUi;
 
     private void SelectionModeChoice_Changed(object sender, RoutedEventArgs e)
@@ -299,6 +247,13 @@ public partial class DashboardView : System.Windows.Controls.UserControl
             ? SelectionActivationMode.Instant
             : SelectionActivationMode.ShiftSelect;
 
+        SaveAllSettingsFromUi();
+    }
+
+    private void AskBarPlacementChoice_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_syncingAskBarPlacementUi) return;
+        if (sender is not System.Windows.Controls.RadioButton { IsChecked: true }) return;
         SaveAllSettingsFromUi();
     }
 
@@ -342,9 +297,41 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         SelectWithoutShiftDesc.Text = SettingsStore.GetSelectionModeDescription();
     }
 
-    private void DashboardNav_Click(object sender, MouseButtonEventArgs e) => ShowDashboardView();
+    private void SyncAskBarPlacementUi()
+    {
+        var bottom = SettingsStore.AskBarPlacement == AskBarPlacementMode.BottomCenter;
+        _syncingAskBarPlacementUi = true;
+        try
+        {
+            AskBarFollowCursor.IsChecked = !bottom;
+            AskBarBottomCenter.IsChecked = bottom;
+        }
+        finally
+        {
+            _syncingAskBarPlacementUi = false;
+        }
 
-    private void SettingsNav_Click(object sender, MouseButtonEventArgs e) => ShowSettingsView();
+        AskBarPlacementDesc.Text = SettingsStore.GetAskBarPlacementDescription();
+    }
+
+    private void DashboardNav_Click(object sender, RoutedEventArgs e) => ShowDashboardView();
+
+    private void BillingNav_Click(object sender, RoutedEventArgs e) => ShowBillingView();
+
+    private void SettingsNav_Click(object sender, RoutedEventArgs e) => ShowSettingsView();
+
+    public void ShowBillingFromOutside()
+    {
+        if (!IsLoaded)
+        {
+            _openBillingWhenLoaded = true;
+            return;
+        }
+
+        ShowBillingView();
+    }
+
+    private void OpenBilling_Click(object sender, RoutedEventArgs e) => ShowBillingView();
 
     private void HistoryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -395,6 +382,7 @@ public partial class DashboardView : System.Windows.Controls.UserControl
     private void HideAllMainPanels()
     {
         ScrollDashboard.Visibility = Visibility.Collapsed;
+        ScrollBilling.Visibility = Visibility.Collapsed;
         ScrollSettings.Visibility = Visibility.Collapsed;
         ScrollHowToUse.Visibility = Visibility.Collapsed;
         ScrollFeedback.Visibility = Visibility.Collapsed;
@@ -413,6 +401,20 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         HistoryList.SelectedItem = null;
         _suppressHistorySelection = false;
         RefreshDashboard();
+    }
+
+    private void ShowBillingView()
+    {
+        CancelChatFollowUp();
+        _detailRow = null;
+        _detailEntry = null;
+        HideAllMainPanels();
+        ScrollBilling.Visibility = Visibility.Visible;
+        SetSidebarNav(billingActive: true);
+        _suppressHistorySelection = true;
+        HistoryList.SelectedItem = null;
+        _suppressHistorySelection = false;
+        RefreshLicenseUi();
     }
 
     private void ShowSettingsView()
@@ -464,8 +466,18 @@ public partial class DashboardView : System.Windows.Controls.UserControl
             ? "Highlight any text — the ask bar opens right away."
             : "Hold Shift, then highlight text — the ask bar appears near your selection.";
 
+        HowToUseTryPrompt.Text = SettingsStore.SelectionMode switch
+        {
+            SelectionActivationMode.Instant =>
+                "Highlight a word below and ask what it means. Instant mode opens the bar on its own.",
+            SelectionActivationMode.CustomHotkey when SettingsStore.SelectionHotkeyVk > 0 =>
+                $"Hold {SettingsStore.FormatHotkey(SettingsStore.SelectionHotkeyVk, SettingsStore.SelectionHotkeyModifiers)}, highlight a word below, and ask what it means.",
+            _ =>
+                "Hold Shift, highlight a word below, and ask what it means."
+        };
+
         HowToUseBody.Text =
-            "1. Add your OpenRouter API key in Settings (from openrouter.ai).\n\n" +
+            "1. You get 5 free asks. Upgrade in Billing when you want idk Pro, which is $3 a month for this computer.\n\n" +
             "2. Choose how idk opens: Shift + select (default) or Instant in Selection mode.\n\n" +
             "3. " + openLine + "\n\n" +
             "4. Type a question in the ask bar, or press Ctrl+Enter for a quick “What does this mean?”\n\n" +
@@ -795,15 +807,17 @@ public partial class DashboardView : System.Windows.Controls.UserControl
 
     private void SyncChatFollowUpChrome()
     {
-        var hasKey = SettingsStore.HasStoredApiKey();
-        var licensed = LicenseService.IsLicensed;
-        ChatFollowUpInput.IsEnabled = hasKey && licensed;
-        ChatFollowUpHint.Text = !licensed
-            ? "Buy idk for this computer in Settings before asking."
-            : "Add your OpenRouter API key in Settings to ask follow-up questions.";
-        ChatFollowUpHint.Visibility = hasKey && licensed ? Visibility.Collapsed : Visibility.Visible;
+        var ready = OpenRouterService.IsReady && FreeAskQuota.CanAsk;
+        ChatFollowUpInput.IsEnabled = ready;
+        ChatFollowUpHint.Text = !OpenRouterService.IsReady
+            ? "Model access is not built into this copy."
+            : FreeAskQuota.BlockedMessage;
+        ChatFollowUpHint.Visibility = ready ? Visibility.Collapsed : Visibility.Visible;
+        ChatFollowUpUpgrade.Visibility = OpenRouterService.IsReady && !FreeAskQuota.CanAsk
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         ChatFollowUpError.Visibility = Visibility.Collapsed;
-        if (!hasKey)
+        if (!ready)
             ChatFollowUpLoading.Visibility = Visibility.Collapsed;
         UpdateChatFollowUpPlaceholderVisibility();
     }
@@ -849,16 +863,17 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         var followUp = ChatFollowUpInput.Text.Trim();
         if (followUp.Length == 0) return;
 
-        if (!LicenseService.IsLicensed)
+        if (!FreeAskQuota.CanAsk)
         {
-            ChatFollowUpError.Text = "Buy idk for this computer in Settings before asking.";
+            ChatFollowUpError.Text = FreeAskQuota.BlockedMessage;
             ChatFollowUpError.Visibility = Visibility.Visible;
+            ChatFollowUpUpgrade.Visibility = Visibility.Visible;
             return;
         }
 
-        if (!SettingsStore.HasStoredApiKey())
+        if (!OpenRouterService.IsReady)
         {
-            ChatFollowUpError.Text = "Add your OpenRouter API key in Settings.";
+            ChatFollowUpError.Text = "Model access is not built into this copy.";
             ChatFollowUpError.Visibility = Visibility.Visible;
             return;
         }
@@ -895,6 +910,7 @@ public partial class DashboardView : System.Windows.Controls.UserControl
                 return;
             }
 
+            FreeAskQuota.RecordSuccess();
             ChatHistoryStore.AppendThreadTurn(row.UtcTicks, followUp, streamAnswer.Trim());
             _ = ChatTitleService.RefreshTitleForEntryAsync(row.UtcTicks);
             if (ChatHistoryStore.TryGetEntry(row.UtcTicks, out var updated) && updated != null)
@@ -916,6 +932,9 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         {
             ChatFollowUpError.Text = ex.Message;
             ChatFollowUpError.Visibility = Visibility.Visible;
+            ChatFollowUpUpgrade.Visibility = ex.Message == FreeAskQuota.BlockedMessage
+                ? Visibility.Visible
+                : Visibility.Collapsed;
             RenderChatThread();
         }
         finally
@@ -929,16 +948,16 @@ public partial class DashboardView : System.Windows.Controls.UserControl
 
     private void SetSidebarNav(
         bool dashboardActive = false,
+        bool billingActive = false,
         bool settingsActive = false,
         bool howToUseActive = false,
         bool feedbackActive = false)
     {
-        var selected = (System.Windows.Media.Brush)FindResource("DashNavSelected");
-        var clear = System.Windows.Media.Brushes.Transparent;
-        DashboardNav.Background = dashboardActive ? selected : clear;
-        SettingsNav.Background = settingsActive ? selected : clear;
-        HowToUseNav.Background = howToUseActive ? selected : clear;
-        FeedbackNav.Background = feedbackActive ? selected : clear;
+        DashboardNav.IsChecked = dashboardActive;
+        BillingNav.IsChecked = billingActive;
+        SettingsNav.IsChecked = settingsActive;
+        HowToUseNav.IsChecked = howToUseActive;
+        FeedbackNav.IsChecked = feedbackActive;
     }
 
     public void RefreshDashboard()
@@ -961,16 +980,16 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         StatPinned.Text = insights.PinnedCount.ToString();
         StatStreak.Text = insights.StreakDays.ToString();
 
-        var hasKey = SettingsStore.HasStoredApiKey();
-        StatApiKey.Text = hasKey ? "Online!" : "Missing";
-        StatApiKey.Foreground = ThemeManager.Brush(hasKey ? "DashSuccessFg" : "DashDangerFg");
+        var ready = OpenRouterService.IsReady;
+        StatApiKey.Text = ready ? "Built in" : "Missing";
+        StatApiKey.Foreground = ThemeManager.Brush(ready ? "DashSuccessFg" : "DashDangerFg");
 
         DashboardGreeting.Text = GetTimeGreeting();
         DashboardHeroSubtitle.Text = !LicenseService.IsLicensed
-            ? "Buy idk for this computer in Settings. It is $5.99 once for this computer."
-            : hasKey
+            ? FreeAskQuota.Summary
+            : ready
             ? insights.HeroSubtitle
-            : "Add your OpenRouter API key in Settings to start asking from any selection.";
+            : "Model access is not built into this copy.";
 
         if (insights.StreakDays >= 2)
         {
@@ -985,7 +1004,7 @@ public partial class DashboardView : System.Windows.Controls.UserControl
             ? "No asks in the last week yet."
             : $"{insights.AsksLast7Days} ask{(insights.AsksLast7Days == 1 ? "" : "s")} in the last 7 days";
 
-        PopulateCurrentSettingsPills(hasKey);
+        PopulateCurrentSettingsPills(ready);
 
         var pinned = insights.PinnedHighlights;
         var hasPinned = pinned.Count > 0;
@@ -1022,17 +1041,21 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         var accent = ThemeManager.Color("DashAccentPill");
 
         if (hasKey)
-            AddGlancePill("API key", accent);
+            AddGlancePill("Built-in model", accent);
         if (s.ScreenCaptureEnabled)
             AddGlancePill("Screen capture", accent);
         if (s.OpenAtLogin)
             AddGlancePill("Open at startup", accent);
         if (s.HideFromTaskbar)
             AddGlancePill("Hidden from taskbar", accent);
+        if (s.HideFromScreenShare)
+            AddGlancePill("Hidden from screen share", accent);
         if (s.OverlaySolidOnly)
             AddGlancePill("Solid overlay", accent);
         if (s.SelectionMode != SelectionActivationMode.ShiftSelect)
             AddGlancePill(SettingsStore.GetSelectionModeDisplayName(), accent);
+        if (s.AskBarPlacement == AskBarPlacementMode.BottomCenter)
+            AddGlancePill("Bottom center bar", accent);
         if (s.Theme == AppTheme.Light)
             AddGlancePill("Light mode", accent);
 
@@ -1069,9 +1092,8 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         tt.X = isOn ? DashSwitchKnobTravel : 0;
     }
 
-    private void SaveAllSettingsFromUi(bool showApiKeyErrors = true)
+    private void SaveAllSettingsFromUi()
     {
-        TrySaveApiKeyFromUi(showApiKeyErrors);
         ErrorBanner.Visibility = Visibility.Collapsed;
         try
         {
@@ -1079,14 +1101,19 @@ public partial class DashboardView : System.Windows.Controls.UserControl
                 ? SelectionActivationMode.Instant
                 : SelectionActivationMode.ShiftSelect;
             var theme = ThemeModeLight.IsChecked == true ? AppTheme.Light : AppTheme.Dark;
+            var askBar = AskBarBottomCenter.IsChecked == true
+                ? AskBarPlacementMode.BottomCenter
+                : AskBarPlacementMode.FollowCursor;
 
             SettingsStore.SaveDashboard(new DashboardSaveDto
             {
                 OpenAtLogin = LaunchLogin.IsChecked == true,
                 ScreenCaptureEnabled = ScreenCaptureToggle.IsChecked == true,
                 HideFromTaskbar = HideFromTaskbarToggle.IsChecked == true,
+                HideFromScreenShare = HideFromScreenShareToggle.IsChecked == true,
                 SelectionMode = mode,
-                Theme = theme
+                Theme = theme,
+                AskBarPlacement = askBar
             });
 
             ThemeManager.Apply(theme);
@@ -1094,6 +1121,7 @@ public partial class DashboardView : System.Windows.Controls.UserControl
                 SettingsStore.ApplyMainWindowTaskbarVisibility(shell);
 
             SyncSelectionModeLabel();
+            SyncAskBarPlacementUi();
             SyncThemeModeUi();
             Refresh();
             if (ScrollDashboard.Visibility == Visibility.Visible)
@@ -1110,7 +1138,7 @@ public partial class DashboardView : System.Windows.Controls.UserControl
     {
         try
         {
-            SaveAllSettingsFromUi(showApiKeyErrors: false);
+            SaveAllSettingsFromUi();
         }
         catch
         {
@@ -1124,15 +1152,17 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         LaunchLogin.IsChecked = s.OpenAtLogin;
         ScreenCaptureToggle.IsChecked = s.ScreenCaptureEnabled;
         HideFromTaskbarToggle.IsChecked = s.HideFromTaskbar;
+        HideFromScreenShareToggle.IsChecked = s.HideFromScreenShare;
         SnapDashSwitchKnob(ScreenCaptureToggle, ScreenCaptureToggle.IsChecked == true);
         SnapDashSwitchKnob(LaunchLogin, LaunchLogin.IsChecked == true);
         SnapDashSwitchKnob(HideFromTaskbarToggle, HideFromTaskbarToggle.IsChecked == true);
+        SnapDashSwitchKnob(HideFromScreenShareToggle, HideFromScreenShareToggle.IsChecked == true);
         SyncSelectionModeLabel();
+        SyncAskBarPlacementUi();
         SyncThemeModeUi();
         if (Window.GetWindow(this) is { } hostWin)
             SettingsStore.ApplyMainWindowTaskbarVisibility(hostWin);
         ErrorBanner.Visibility = Visibility.Collapsed;
-        SyncApiKeyUi();
         RefreshLicenseUi();
     }
 
@@ -1153,38 +1183,51 @@ public partial class DashboardView : System.Windows.Controls.UserControl
     {
         var licensed = LicenseService.IsLicensed;
         var status = string.IsNullOrWhiteSpace(LicenseService.StatusMessage)
-            ? "idk is $5.99 once for this computer."
+            ? LicenseService.PriceMessage
             : LicenseService.StatusMessage;
         LicenseStatusText.Text = status;
         DashboardLicenseStatusText.Text = status;
+        BillingFreeAsksText.Text = FreeAskQuota.Summary;
+        DashboardFreeAsksText.Text = FreeAskQuota.Summary;
+        SettingsPlanSummary.Text = FreeAskQuota.Summary;
         LicenseVersionText.Text = "idk " + AppVersion.Current;
         var buy = licensed ? Visibility.Collapsed : Visibility.Visible;
         LicenseBuyButton.Visibility = buy;
-        LicensePromoPanel.Visibility = buy;
-        DashboardLicensePromoPanel.Visibility = buy;
+        LicenseManageButton.Visibility = licensed ? Visibility.Visible : Visibility.Collapsed;
         DashboardLicenseBuyButton.Visibility = buy;
         DashboardLicenseCard.Visibility = licensed ? Visibility.Collapsed : Visibility.Visible;
         var enabled = !LicenseService.IsBusy;
         LicenseBuyButton.IsEnabled = enabled;
+        LicenseManageButton.IsEnabled = enabled;
         LicenseCheckButton.IsEnabled = enabled;
         DashboardLicenseBuyButton.IsEnabled = enabled;
-        DashboardLicenseCheckButton.IsEnabled = enabled;
     }
-
-    private string LicensePromoText() =>
-        ScrollSettings.Visibility == Visibility.Visible
-            ? LicensePromoInput.Text
-            : DashboardLicensePromoInput.Text;
 
     private async void LicenseBuy_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            await LicenseService.BuyAsync(LicensePromoText());
+            await LicenseService.BuyAsync();
         }
         catch (Exception ex)
         {
             CrashLog.Write(ex, "LicenseBuy");
+        }
+        finally
+        {
+            RefreshLicenseUi();
+        }
+    }
+
+    private async void LicenseManage_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await LicenseService.ManageAsync();
+        }
+        catch (Exception ex)
+        {
+            CrashLog.Write(ex, "LicenseManage");
         }
         finally
         {
@@ -1206,27 +1249,6 @@ public partial class DashboardView : System.Windows.Controls.UserControl
         {
             RefreshLicenseUi();
         }
-    }
-
-    private void SyncApiKeyUi(bool clearInput = false)
-    {
-        var hasKey = SettingsStore.HasStoredApiKey();
-        var preview = SettingsStore.GetStoredApiKeyPreview();
-
-        if (clearInput || !_apiKeyDirty)
-        {
-            _apiKeyUiSync = true;
-            ApiKeyInput.Password = "";
-            _apiKeyUiSync = false;
-        }
-
-        ApiKeyStatus.Text = hasKey
-            ? string.IsNullOrEmpty(preview)
-                ? "Key saved. idk uses default models automatically."
-                : $"Key saved ({preview}). idk uses default models automatically."
-            : "Required. Get a key at openrouter.ai/keys.";
-
-        ApiKeyStatus.Foreground = (System.Windows.Media.Brush)FindResource(hasKey ? "DashMuted" : "DashSubtle");
     }
 
     public void RefreshChatHistory()

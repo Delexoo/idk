@@ -170,6 +170,43 @@ public static class MouseFollowPillLayout
         top = st;
     }
 
+    /// <summary>Lock the pill to the horizontal center of the work area, just above the bottom edge.</summary>
+    public static void PlaceAtBottomCenter(
+        Visual dpiVisual,
+        Point anchorPhysical,
+        double width,
+        double height,
+        double bottomMargin,
+        out double left,
+        out double top)
+    {
+        var w = Math.Max(1, width);
+        var h = Math.Max(1, height);
+        var src = PresentationSource.FromVisual(dpiVisual);
+        if (src?.CompositionTarget == null)
+        {
+            var wa = SystemParameters.WorkArea;
+            left = wa.Left + (wa.Width - w) / 2;
+            top = wa.Bottom - h - bottomMargin;
+            return;
+        }
+
+        var screen = System.Windows.Forms.Screen.FromPoint(
+            new System.Drawing.Point(
+                (int)Math.Round(anchorPhysical.X),
+                (int)Math.Round(anchorPhysical.Y)));
+        var area = screen.WorkingArea;
+        var dip = PhysicalRectToDip(dpiVisual, new Rect(area.Left, area.Top, area.Width, area.Height));
+        left = dip.Left + (dip.Width - w) / 2;
+        top = dip.Bottom - h - bottomMargin;
+
+        const double edge = 8;
+        if (left < dip.Left + edge) left = dip.Left + edge;
+        if (left + w > dip.Right - edge) left = Math.Max(dip.Left + edge, dip.Right - edge - w);
+        if (top + h > dip.Bottom - edge) top = dip.Bottom - h - edge;
+        if (top < dip.Top + edge) top = dip.Top + edge;
+    }
+
     public static void ClampToParent(ref double left, ref double top, double w, double h, double parentW, double parentH, double margin = 8)
     {
         if (left + w > parentW - margin) left = parentW - w - margin;

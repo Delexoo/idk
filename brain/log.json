@@ -1,6 +1,118 @@
 {
   "updates": [
     {
+      "version": "0.1.6",
+      "date": "2026-11-02",
+      "title": "Promo codes stay on Stripe",
+      "sections": [
+        {
+          "heading": "Dashboard",
+          "added": [
+            "A promotional code is entered on the Stripe checkout screen."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.5",
+      "date": "2026-11-02",
+      "title": "Five free asks, then Billing",
+      "sections": [
+        {
+          "heading": "Dashboard",
+          "added": [
+            "Billing shows how many free asks are left and upgrades this computer to idk Pro."
+          ]
+        },
+        {
+          "heading": "Overlay",
+          "added": [
+            "The first 5 asks are free. After that, Upgrade opens Billing."
+          ],
+          "fixes": [
+            "An ask still answers when the screenshot model is unavailable."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.4",
+      "date": "2026-11-02",
+      "title": "The ask bar is a smooth capsule",
+      "sections": [
+        {
+          "heading": "Overlay",
+          "fixes": [
+            "The ask bar is a smooth capsule, with sharp text and rounded ends."
+          ]
+        },
+        {
+          "heading": "Dashboard",
+          "added": [
+            "Settings sells idk Pro for $3 a month, and asking stays on while that subscription is active."
+          ]
+        },
+        {
+          "heading": "Site",
+          "added": [
+            "The site lists idk Pro at $3 a month."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.3",
+      "date": "2026-11-02",
+      "title": "Dashboard responds to the pointer",
+      "sections": [
+        {
+          "heading": "Dashboard",
+          "added": [
+            "Sidebar, buttons, switches, rows, and cards light up and press in when you hover or click.",
+            "Settings lets the search bar follow the cursor, or locks the mini search bar at the bottom center of the screen.",
+            "How to use includes a short paragraph you can highlight to try the ask bar.",
+            "Settings can keep idk off screenshots, screen shares, and streams."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.2",
+      "date": "2026-11-02",
+      "title": "Selection opens the ask bar",
+      "sections": [
+        {
+          "heading": "Overlay",
+          "fixes": [
+            "Selecting text in an editor or browser opens the ask bar, and the bar stays up after it takes focus.",
+            "Shift + select opens the ask bar when Shift was held during the drag."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.1",
+      "date": "2026-11-02",
+      "title": "Model access is built in",
+      "sections": [
+        {
+          "heading": "Dashboard",
+          "added": [
+            "Settings no longer asks for an API key. Model access is built into idk."
+          ],
+          "fixes": [
+            "Dashboard buttons and chat rows open again. A font helper was stopping the click."
+          ]
+        },
+        {
+          "heading": "Chat",
+          "added": [
+            "Questions use the sealed model key. That key is not saved in settings and is not shown on screen."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.0",
       "date": "2026-11-02",
       "title": "A license for this computer",

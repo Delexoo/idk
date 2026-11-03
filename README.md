@@ -2,11 +2,11 @@
 
 idk is a Windows desktop app. Select text in any app and ask a question in place.
 
-A license is $5.99 once for this computer. Copying the app or the license file does not unlock another computer. You also bring your own OpenRouter API key and pay that provider for model usage.
+idk Pro is $3 a month for this computer. Asking stays on while the subscription is active. Copying the app or the license file does not unlock another computer. Model access is built in. The key is sealed into the build from `.env` and is not saved in settings.
 
 ## Install
 
-The installer is `dist-setup/idk-Setup-0.1.0.exe`. It installs idk under `Program Files\idk`, shows the license, and can add a Start Menu shortcut, a desktop shortcut, and a sign-in startup entry. The same file is at `website/download/idk-Setup.exe`.
+The installer is `dist-setup/idk-Setup-0.1.6.exe`. It installs idk under `Program Files\idk`, shows the license, and can add a Start Menu shortcut, a desktop shortcut, and a sign-in startup entry. The same file is at `website/download/idk-Setup.exe`.
 
 Build it with:
 
@@ -18,8 +18,8 @@ The setup includes the desktop app, so a separate .NET install is not required. 
 
 ## License keys
 
-Copy `.env.example` to `.env` on the machine that sells licenses. Never commit `.env`. `STRIPE_SECRET_KEY` signs the one-time license for this computer. The installer does not include `.env`.
+Copy `.env.example` to `.env` on the machine that sells licenses. Never commit `.env`. `STRIPE_SECRET_KEY` checks the $3 monthly subscription for this computer. The installer does not include `.env`.
 
 ## License
 
-Use is governed by the license shown in setup (`installer/license.rtf`). One paid license is for one computer. The software is provided as is, and liability is limited as that agreement states.
+Use is governed by the license shown in setup (`installer/license.rtf`). One subscription is for one computer while it is active. The software is provided as is, and liability is limited as that agreement states.

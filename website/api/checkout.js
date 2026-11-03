@@ -14,8 +14,6 @@ export default async function handler(req, res) {
 
 async function startCheckout(req) {
   const secret = process.env.STRIPE_SECRET_KEY || "";
-  const promoCode = process.env.IDK_PROMO_CODE || "";
-  const promoId = process.env.STRIPE_PROMO_ID || "";
   if (!secret) throw new Error("Billing is not configured yet.");
   const body = req.body && typeof req.body === "object" ? req.body : {};
   const email = typeof body.email === "string" ? body.email.trim() : "";
@@ -27,23 +25,20 @@ async function startCheckout(req) {
   const successUrl = returnUrl(body.successUrl);
   const cancelUrl = returnUrl(body.cancelUrl);
   const params = new URLSearchParams();
-  params.set("mode", "payment");
+  params.set("mode", "subscription");
   params.set("line_items[0][quantity]", "1");
   params.set("line_items[0][price_data][currency]", "usd");
-  params.set("line_items[0][price_data][unit_amount]", "599");
-  params.set("line_items[0][price_data][product_data][name]", "idk");
-  params.set("line_items[0][price_data][product_data][description]", "One-time license for this computer.");
+  params.set("line_items[0][price_data][unit_amount]", "300");
+  params.set("line_items[0][price_data][recurring][interval]", "month");
+  params.set("line_items[0][price_data][product_data][name]", "idk Pro");
+  params.set("line_items[0][price_data][product_data][description]", "$3 a month for this computer.");
   params.set("success_url", successUrl);
   params.set("cancel_url", cancelUrl);
   params.set("metadata[device]", device);
+  params.set("subscription_data[metadata][device]", device);
   params.set("client_reference_id", device);
   if (email) params.set("customer_email", email);
-  const typed = typeof body.promo === "string" ? body.promo.trim() : "";
-  if (typed && (typed.length > 40 || !/^[A-Za-z0-9-]+$/.test(typed))) {
-    throw new Error("Use letters, numbers, and hyphens in the promotional code.");
-  }
-  if (typed && promoId && typed.toUpperCase() === promoCode.toUpperCase()) params.set("discounts[0][promotion_code]", promoId);
-  else params.set("allow_promotion_codes", "true");
+  params.set("allow_promotion_codes", "true");
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
     headers: {

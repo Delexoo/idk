@@ -13,12 +13,13 @@ using Microsoft.Win32;
 namespace Idk.Services;
 
 /// <summary>
-/// One-time license for this computer. The license file is signed for this machine only.
+/// Monthly subscription for this computer. The license file is signed for this machine and lasts until the paid period ends.
 /// </summary>
 public static class LicenseService
 {
-    public const int PriceCents = 599;
-    public const string PaidMessage = "Paid $5.99 once for the idk license on this computer.";
+    public const int PriceCents = 300;
+    public const string PriceMessage = "idk Pro is $3 a month for this computer.";
+    public const string PaidMessage = "idk Pro is active. It is $3 a month for this computer.";
 
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
     private static readonly SemaphoreSlim Gate = new(1, 1);
@@ -29,8 +30,6 @@ public static class LicenseService
     };
 
     private static string _secret = "";
-    private static string _promoCode = "";
-    private static string _promoId = "";
     private static string _billingOrigin = "";
     private static string _deviceId = "";
     private static TcpListener? _listener;
@@ -38,13 +37,14 @@ public static class LicenseService
 
     public static bool IsLicensed { get; private set; }
     public static bool IsBusy { get; private set; }
-    public static string StatusMessage { get; private set; } = "idk is $5.99 once for this computer.";
+    public static string StatusMessage { get; private set; } = PriceMessage;
+    private static string _customerId = "";
     public static event Action? Changed;
 
     public static void Load()
     {
         LoadEnv();
-        if (TryReadLocal())
+        if (TryReadCache() != null)
         {
             IsLicensed = true;
             StatusMessage = PaidMessage;
@@ -52,18 +52,18 @@ public static class LicenseService
         else
         {
             IsLicensed = false;
-            StatusMessage = "idk is $5.99 once for this computer.";
+            StatusMessage = PriceMessage;
         }
 
         Changed?.Invoke();
         _ = CheckCoreAsync(userInitiated: false);
     }
 
-    public static Task BuyAsync(string? promo) => BuyCoreAsync(promo);
+    public static Task BuyAsync() => BuyCoreAsync();
 
     public static Task CheckAsync() => CheckCoreAsync(userInitiated: true);
 
-    private static async Task BuyCoreAsync(string? promo)
+    private static async Task BuyCoreAsync()
     {
         await Gate.WaitAsync();
         try
@@ -76,19 +76,15 @@ public static class LicenseService
             if (device.Length == 0)
                 throw new InvalidOperationException("This computer could not be identified.");
 
-            var typed = (promo ?? "").Trim();
-            if (typed.Length > 0 && (typed.Length > 40 || !System.Text.RegularExpressions.Regex.IsMatch(typed, "^[A-Za-z0-9-]+$")))
-                throw new InvalidOperationException("Use letters, numbers, and hyphens in the promotional code.");
-
             var port = StartCallback();
             var success = $"http://127.0.0.1:{port}/paid?session_id={{CHECKOUT_SESSION_ID}}";
             var cancel = $"http://127.0.0.1:{port}/cancel";
             var url = _secret.Length > 0
-                ? await CreateCheckoutAsync(device, typed, success, cancel)
-                : await HostedCheckoutAsync(device, typed, success, cancel);
+                ? await CreateCheckoutAsync(device, success, cancel)
+                : await HostedCheckoutAsync(device, success, cancel);
 
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            StatusMessage = "Finish the payment in the browser. idk updates when this computer is paid.";
+            StatusMessage = "Finish subscribing in the browser. idk updates when the subscription is active.";
         }
         catch (Exception ex)
         {
@@ -114,17 +110,17 @@ public static class LicenseService
                 Changed?.Invoke();
             }
 
-            if (TryReadLocal())
+            var cache = TryReadCache();
+            if (cache != null)
             {
                 IsLicensed = true;
                 StatusMessage = PaidMessage;
-                return;
             }
 
             if (_secret.Length == 0 && _billingOrigin.Length == 0)
             {
-                IsLicensed = false;
-                StatusMessage = "Billing is not configured yet.";
+                if (!IsLicensed)
+                    StatusMessage = "Billing is not configured yet.";
                 return;
             }
 
@@ -138,8 +134,10 @@ public static class LicenseService
 
             if (found is not { Active: true })
             {
+                ClearLocal();
+                _customerId = "";
                 IsLicensed = false;
-                StatusMessage = "This computer is not licensed yet.";
+                StatusMessage = "This computer does not have an active subscription.";
                 return;
             }
 
@@ -147,7 +145,7 @@ public static class LicenseService
         }
         catch (Exception ex)
         {
-            if (!TryReadLocal())
+            if (TryReadCache() == null)
             {
                 IsLicensed = false;
                 StatusMessage = Clean(ex.Message, "Billing could not be checked.");
@@ -162,10 +160,43 @@ public static class LicenseService
         }
     }
 
+    public static async Task ManageAsync()
+    {
+        await Gate.WaitAsync();
+        try
+        {
+            IsBusy = true;
+            StatusMessage = "Opening subscription settings.";
+            Changed?.Invoke();
+
+            var device = DeviceId();
+            if (device.Length == 0)
+                throw new InvalidOperationException("This computer could not be identified.");
+
+            var url = _secret.Length > 0
+                ? await CreatePortalAsync(device)
+                : await HostedPortalAsync(device);
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            StatusMessage = PaidMessage;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = Clean(ex.Message, "Billing could not open.");
+        }
+        finally
+        {
+            IsBusy = false;
+            Changed?.Invoke();
+            Gate.Release();
+        }
+    }
+
     private static void Remember(string device, PaidCheckout found)
     {
-        if (_secret.Length > 0)
-            SaveLocal(device, found.SessionId, found.Email);
+        if (found.CustomerId.Length > 0)
+            _customerId = found.CustomerId;
+        if (_secret.Length > 0 && found.PeriodEnd > DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            SaveLocal(device, found.SessionId, found.SubscriptionId, found.Email, found.PeriodEnd);
         IsLicensed = true;
         StatusMessage = PaidMessage;
     }
@@ -183,9 +214,9 @@ public static class LicenseService
             if (_secret.Length > 0)
             {
                 using var doc = await StripeAsync(HttpMethod.Get, $"/v1/checkout/sessions/{sessionId}", null);
-                found = ReadPaid(doc.RootElement, device) ?? throw new InvalidOperationException("This payment belongs to a different computer.");
+                found = await ReadActiveSubscriptionAsync(doc.RootElement, device) ?? throw new InvalidOperationException("This payment belongs to a different computer.");
                 if (!found.Active)
-                    throw new InvalidOperationException("Checkout could not be confirmed.");
+                    throw new InvalidOperationException("This subscription is not active.");
             }
             else
             {
@@ -227,8 +258,6 @@ public static class LicenseService
         }
 
         _secret = Value(map, "STRIPE_SECRET_KEY");
-        _promoCode = Value(map, "IDK_PROMO_CODE");
-        _promoId = Value(map, "STRIPE_PROMO_ID");
         _billingOrigin = Value(map, "IDK_BILLING_ORIGIN").TrimEnd('/');
     }
 
@@ -267,71 +296,88 @@ public static class LicenseService
 
     private static string LicensePath => Path.Combine(SettingsStore.DataDirectory, "license.json");
 
-    private static bool TryReadLocal()
+    private static LicenseFile? TryReadCache()
     {
-        if (_secret.Length == 0 || DeviceId().Length == 0 || !File.Exists(LicensePath)) return false;
+        if (_secret.Length == 0 || DeviceId().Length == 0 || !File.Exists(LicensePath)) return null;
         try
         {
             var record = JsonSerializer.Deserialize<LicenseFile>(File.ReadAllText(LicensePath), JsonOpts);
-            return record != null && Matches(_secret, _deviceId, record);
+            if (record == null || !Matches(_secret, _deviceId, record)) return null;
+            if (record.PeriodEnd <= DateTimeOffset.UtcNow.ToUnixTimeSeconds()) return null;
+            return record;
         }
         catch
         {
-            return false;
+            return null;
         }
     }
 
-    private static void SaveLocal(string device, string sessionId, string email)
+    private static void ClearLocal()
+    {
+        try
+        {
+            if (File.Exists(LicensePath))
+                File.Delete(LicensePath);
+        }
+        catch
+        {
+            /* The next check asks Stripe again. */
+        }
+    }
+
+    private static void SaveLocal(string device, string sessionId, string subscriptionId, string email, long periodEnd)
     {
         Directory.CreateDirectory(SettingsStore.DataDirectory);
         var record = new LicenseFile
         {
-            V = 1,
+            V = 2,
             Device = device,
             SessionId = sessionId,
+            SubscriptionId = subscriptionId,
             Email = email,
-            Sig = Sign(_secret, device, sessionId, email)
+            PeriodEnd = periodEnd,
+            Sig = Sign(_secret, device, sessionId, subscriptionId, email, periodEnd)
         };
         File.WriteAllText(LicensePath, JsonSerializer.Serialize(record, JsonOpts));
     }
 
-    private static string Sign(string secret, string device, string sessionId, string email)
+    private static string Sign(string secret, string device, string sessionId, string subscriptionId, string email, long periodEnd)
     {
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
-        var bytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{device}\n{sessionId}\n{email}"));
+        var bytes = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{device}\n{sessionId}\n{subscriptionId}\n{email}\n{periodEnd}"));
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
     private static bool Matches(string secret, string device, LicenseFile record)
     {
-        if (record.V != 1 || record.Device != device) return false;
-        if (string.IsNullOrEmpty(record.SessionId) || record.Email == null || string.IsNullOrEmpty(record.Sig)) return false;
+        if (record.V != 2 || record.Device != device) return false;
+        if (string.IsNullOrEmpty(record.SessionId) || string.IsNullOrEmpty(record.SubscriptionId) || record.Email == null || string.IsNullOrEmpty(record.Sig))
+            return false;
         if (record.Sig.Length != 64) return false;
-        var expected = Sign(secret, device, record.SessionId, record.Email);
+        var expected = Sign(secret, device, record.SessionId, record.SubscriptionId, record.Email, record.PeriodEnd);
         var left = Encoding.ASCII.GetBytes(expected);
         var right = Encoding.ASCII.GetBytes(record.Sig.ToLowerInvariant());
         return left.Length == right.Length && CryptographicOperations.FixedTimeEquals(left, right);
     }
 
-    private static async Task<string> CreateCheckoutAsync(string device, string promo, string success, string cancel)
+    private static async Task<string> CreateCheckoutAsync(string device, string success, string cancel)
     {
         var form = new Dictionary<string, string>
         {
-            ["mode"] = "payment",
+            ["mode"] = "subscription",
             ["line_items[0][quantity]"] = "1",
             ["line_items[0][price_data][currency]"] = "usd",
             ["line_items[0][price_data][unit_amount]"] = PriceCents.ToString(),
-            ["line_items[0][price_data][product_data][name]"] = "idk",
-            ["line_items[0][price_data][product_data][description]"] = "One-time license for this computer.",
+            ["line_items[0][price_data][recurring][interval]"] = "month",
+            ["line_items[0][price_data][product_data][name]"] = "idk Pro",
+            ["line_items[0][price_data][product_data][description]"] = "$3 a month for this computer.",
             ["success_url"] = success,
             ["cancel_url"] = cancel,
             ["metadata[device]"] = device,
-            ["client_reference_id"] = device
+            ["subscription_data[metadata][device]"] = device,
+            ["client_reference_id"] = device,
+            ["allow_promotion_codes"] = "true"
         };
-        if (promo.Length > 0 && _promoId.Length > 0 && string.Equals(promo, _promoCode, StringComparison.OrdinalIgnoreCase))
-            form["discounts[0][promotion_code]"] = _promoId;
-        else
-            form["allow_promotion_codes"] = "true";
 
         using var doc = await StripeAsync(HttpMethod.Post, "/v1/checkout/sessions", form);
         var url = doc.RootElement.TryGetProperty("url", out var urlEl) ? urlEl.GetString() : null;
@@ -342,11 +388,11 @@ public static class LicenseService
 
     private static async Task<PaidCheckout?> FindPaidAsync(string device)
     {
-        var query = Uri.EscapeDataString($"client_reference_id:'{device}' AND status:'complete'");
+        var query = Uri.EscapeDataString($"client_reference_id:'{device}' AND status:'complete' AND mode:'subscription'");
         try
         {
             using var doc = await StripeAsync(HttpMethod.Get, $"/v1/checkout/sessions/search?query={query}&limit=5", null);
-            var found = FirstPaid(doc.RootElement, device);
+            var found = await FirstActiveAsync(doc.RootElement, device);
             if (found != null) return found;
         }
         catch
@@ -377,7 +423,7 @@ public static class LicenseService
 
             using (doc)
             {
-                var found = FirstPaid(doc.RootElement, device);
+                var found = await FirstActiveAsync(doc.RootElement, device);
                 if (found != null) return found;
                 if (!doc.RootElement.TryGetProperty("data", out var rows) || rows.GetArrayLength() == 0)
                     return null;
@@ -392,20 +438,21 @@ public static class LicenseService
         return null;
     }
 
-    private static PaidCheckout? FirstPaid(JsonElement payload, string device)
+    private static async Task<PaidCheckout?> FirstActiveAsync(JsonElement payload, string device)
     {
         if (!payload.TryGetProperty("data", out var rows) || rows.ValueKind != JsonValueKind.Array) return null;
         foreach (var row in rows.EnumerateArray())
         {
-            var paid = ReadPaid(row, device);
+            var paid = await ReadActiveSubscriptionAsync(row, device);
             if (paid is { Active: true }) return paid;
         }
 
         return null;
     }
 
-    private static PaidCheckout? ReadPaid(JsonElement record, string device)
+    private static async Task<PaidCheckout?> ReadActiveSubscriptionAsync(JsonElement record, string device)
     {
+        if (StringProp(record, "mode") != "subscription") return null;
         var reference = StringProp(record, "client_reference_id");
         var tagged = "";
         if (record.TryGetProperty("metadata", out var metadata) && metadata.ValueKind == JsonValueKind.Object)
@@ -413,23 +460,82 @@ public static class LicenseService
         if (reference != device && tagged != device) return null;
         var status = StringProp(record, "status");
         var payment = StringProp(record, "payment_status");
-        var active = status == "complete" && (payment == "paid" || payment == "no_payment_required");
         var sessionId = StringProp(record, "id");
-        if (!active || !IsSessionId(sessionId)) return null;
+        var subscriptionId = StringProp(record, "subscription");
+        var paid = status == "complete" && (payment == "paid" || payment == "no_payment_required");
+        if (!paid || !IsSessionId(sessionId) || !IsSubscriptionId(subscriptionId)) return null;
         var email = StringProp(record, "customer_email");
         if (email.Length == 0 && record.TryGetProperty("customer_details", out var details))
             email = StringProp(details, "email");
-        return new PaidCheckout(true, sessionId, email);
+
+        using var subDoc = await StripeAsync(HttpMethod.Get, "/v1/subscriptions/" + subscriptionId, null);
+        var sub = subDoc.RootElement;
+        var subDevice = "";
+        if (sub.TryGetProperty("metadata", out var subMeta) && subMeta.ValueKind == JsonValueKind.Object)
+            subDevice = StringProp(subMeta, "device");
+        if (subDevice.Length > 0 && subDevice != device) return null;
+        var subStatus = StringProp(sub, "status");
+        var active = subStatus is "active" or "trialing";
+        var customerId = StringProp(sub, "customer");
+        return new PaidCheckout(active, sessionId, email, subscriptionId, PeriodEnd(sub), customerId);
     }
 
-    private static async Task<string> HostedCheckoutAsync(string device, string promo, string success, string cancel)
+    private static long PeriodEnd(JsonElement sub)
+    {
+        if (sub.TryGetProperty("current_period_end", out var end) && end.TryGetInt64(out var unix) && unix > 0)
+            return unix;
+        if (sub.TryGetProperty("items", out var items)
+            && items.TryGetProperty("data", out var data)
+            && data.ValueKind == JsonValueKind.Array
+            && data.GetArrayLength() > 0
+            && data[0].TryGetProperty("current_period_end", out var itemEnd)
+            && itemEnd.TryGetInt64(out var itemUnix))
+            return itemUnix;
+        return 0;
+    }
+
+    private static async Task<string> CreatePortalAsync(string device)
+    {
+        var customer = _customerId;
+        if (!IsCustomerId(customer))
+        {
+            var found = await FindPaidAsync(device);
+            customer = found?.CustomerId ?? "";
+        }
+
+        if (!IsCustomerId(customer))
+            throw new InvalidOperationException("This computer does not have an active subscription.");
+
+        var origin = _billingOrigin.StartsWith("https://", StringComparison.Ordinal) ? _billingOrigin : "https://stripe.com";
+        using var doc = await StripeAsync(HttpMethod.Post, "/v1/billing_portal/sessions", new Dictionary<string, string>
+        {
+            ["customer"] = customer,
+            ["return_url"] = origin
+        });
+        var url = doc.RootElement.TryGetProperty("url", out var urlEl) ? urlEl.GetString() : null;
+        if (url == null || !url.StartsWith("https://", StringComparison.Ordinal))
+            throw new InvalidOperationException("Billing could not open.");
+        return url;
+    }
+
+    private static async Task<string> HostedPortalAsync(string device)
+    {
+        if (_billingOrigin.Length == 0)
+            throw new InvalidOperationException("Billing is not configured yet.");
+        using var doc = await PostJsonAsync(_billingOrigin + "/api/license", new { device, portal = true });
+        var url = doc.RootElement.TryGetProperty("url", out var urlEl) ? urlEl.GetString() : null;
+        if (url == null || !url.StartsWith("https://", StringComparison.Ordinal))
+            throw new InvalidOperationException("Billing could not open.");
+        return url;
+    }
+
+    private static async Task<string> HostedCheckoutAsync(string device, string success, string cancel)
     {
         if (_billingOrigin.Length == 0)
             throw new InvalidOperationException("Billing is not configured yet.");
         using var doc = await PostJsonAsync(_billingOrigin + "/api/checkout", new
         {
             device,
-            promo,
             successUrl = success,
             cancelUrl = cancel
         });
@@ -447,7 +553,12 @@ public static class LicenseService
         var active = doc.RootElement.TryGetProperty("active", out var activeEl) && activeEl.ValueKind == JsonValueKind.True;
         var email = doc.RootElement.TryGetProperty("email", out var emailEl) ? emailEl.GetString() ?? "" : "";
         var id = doc.RootElement.TryGetProperty("sessionId", out var idEl) ? idEl.GetString() ?? "" : "";
-        return new PaidCheckout(active, id, email);
+        var subscriptionId = doc.RootElement.TryGetProperty("subscriptionId", out var subEl) ? subEl.GetString() ?? "" : "";
+        var customerId = doc.RootElement.TryGetProperty("customerId", out var customerEl) ? customerEl.GetString() ?? "" : "";
+        long periodEnd = 0;
+        if (doc.RootElement.TryGetProperty("periodEnd", out var endEl))
+            endEl.TryGetInt64(out periodEnd);
+        return new PaidCheckout(active, id, email, subscriptionId, periodEnd, customerId);
     }
 
     private static async Task<JsonDocument> PostJsonAsync(string url, object body)
@@ -581,7 +692,7 @@ public static class LicenseService
                     try
                     {
                         await ConfirmSessionAsync(ReadQuery(target, "session_id"));
-                        html = "<html><body style=\"font-family:Segoe UI,sans-serif\"><h1>This computer is licensed.</h1><p>You can close this tab and return to idk.</p></body></html>";
+                        html = "<html><body style=\"font-family:Segoe UI,sans-serif\"><h1>This computer is subscribed.</h1><p>You can close this tab and return to idk.</p></body></html>";
                     }
                     catch (Exception ex)
                     {
@@ -628,6 +739,12 @@ public static class LicenseService
     private static bool IsSessionId(string? value) =>
         !string.IsNullOrEmpty(value) && System.Text.RegularExpressions.Regex.IsMatch(value, "^cs_[A-Za-z0-9_]+$");
 
+    private static bool IsSubscriptionId(string? value) =>
+        !string.IsNullOrEmpty(value) && System.Text.RegularExpressions.Regex.IsMatch(value, "^sub_[A-Za-z0-9]+$");
+
+    private static bool IsCustomerId(string? value) =>
+        !string.IsNullOrEmpty(value) && System.Text.RegularExpressions.Regex.IsMatch(value, "^cus_[A-Za-z0-9]+$");
+
     private static string StringProp(JsonElement element, string name) =>
         element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString() ?? ""
@@ -645,9 +762,11 @@ public static class LicenseService
         public int V { get; set; }
         public string? Device { get; set; }
         public string? SessionId { get; set; }
+        public string? SubscriptionId { get; set; }
         public string? Email { get; set; }
+        public long PeriodEnd { get; set; }
         public string? Sig { get; set; }
     }
 
-    private sealed record PaidCheckout(bool Active, string SessionId, string Email);
+    private sealed record PaidCheckout(bool Active, string SessionId, string Email, string SubscriptionId, long PeriodEnd, string CustomerId);
 }
