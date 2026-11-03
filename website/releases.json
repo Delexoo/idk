@@ -2,6 +2,21 @@
   "repo": "Delexoo/idk",
   "updates": [
     {
+      "version": "0.1.12",
+      "date": "2026-11-02",
+      "title": "Rounded bottom bar",
+      "tag": "v0.1.12",
+      "url": "https://github.com/Delexoo/idk/releases/tag/v0.1.12",
+      "sections": [
+        {
+          "heading": "Overlay",
+          "fixes": [
+            "The search bar stays rounded when it is locked at the bottom center."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.11",
       "date": "2026-11-02",
       "title": "Simpler dashboard",
