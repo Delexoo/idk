@@ -1,0 +1,23 @@
+---
+description: On every commit or update, raise the idk version and ship the latest installer
+alwaysApply: true
+---
+
+# Publish idk on every commit or update
+
+Whenever you commit, push, update a release, or ship idk, raise the version first, then build that same source into the installer. Do this before you tell the user the update is ready. Do not wait to be asked. Do not ship two commits on the same version.
+
+The version is one number. If the user did not name the next one, raise the patch number. Write that same number in every place below before you package. Do not leave the previous number in any of them.
+
+- `installer/idk.iss`: `MyAppVersion` and `VersionInfoVersion`. A version `0.1.1` has `VersionInfoVersion` `0.1.1.0`.
+- `Idk/Idk.csproj`: `Version`, `AssemblyVersion`, `FileVersion`, and `InformationalVersion`. `AssemblyVersion` and `FileVersion` use four parts, such as `0.1.1.0`.
+- `website/download.html`: the version text.
+- `README.md`: `dist-setup/idk-Setup-<version>.exe`.
+- `brain/log.json`: this commit's notes go on a new top entry for that version, dated today. Leave shipped versions as they are. If the top entry is still the shipped version, add the new entry and move the unreleased notes into it.
+
+1. Raise the version in the list above. Add any unlogged change to that new `brain/log.json` entry under `added` or `fixes`.
+2. Update `README.md` so the version and the installer path `dist-setup/idk-Setup-<version>.exe` match this build.
+3. Rebuild with `powershell -File scripts/package-windows.ps1`. The setup file is `dist-setup/idk-Setup-<version>.exe`. The script also copies it to `website/download/idk-Setup.exe`.
+4. Never commit `.env` or `billing.env`. The installer must not contain them.
+5. Do not print tokens or license secrets from `.env`.
+6. Push or deploy only when this project already has that remote or site and the user asked to publish.

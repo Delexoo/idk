@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Try it — idk</title>
+  <meta name="description" content="Try idk in the browser: highlight sample text and ask a question." />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="page-search">
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="index.html">
+        <img src="assets/idk.png" width="28" height="28" alt="" />
+        idk
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a href="index.html">Home</a>
+        <a href="search.html" class="is-active">Try it</a>
+        <a href="download.html">Download</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="search-page">
+    <header class="search-page__head">
+      <h1>Try it out!</h1>
+    </header>
+
+    <div class="demo-layout">
+      <div class="demo-toolbar">
+        <div id="demo-tabs" class="demo-tabs" role="tablist" aria-label="Scenarios"></div>
+      </div>
+
+      <div id="demo-stage" class="demo-stage">
+        <div id="demo-doc" class="demo-doc"></div>
+        <div id="demo-pill" class="demo-pill" role="dialog" aria-label="Ask idk">
+          <span class="demo-pill__icon" aria-hidden="true">
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+              <circle cx="5.75" cy="6.75" r="4.75" stroke="currentColor" stroke-width="1.35" fill="none" />
+              <line x1="10.5" y1="10.5" x2="16.5" y2="16.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" />
+            </svg>
+          </span>
+          <input id="demo-pill-input" type="text" placeholder="Ask Anything!" autocomplete="off" spellcheck="false" />
+        </div>
+      </div>
+
+      <div id="demo-answer" class="demo-answer-card" aria-live="polite" role="dialog" aria-label="Answer">
+        <header class="demo-card-header">
+          <button type="button" class="demo-card-btn" id="demo-card-simpler">Simpler</button>
+          <button type="button" class="demo-card-close" id="demo-card-close" aria-label="Close">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
+            </svg>
+          </button>
+        </header>
+        <div class="demo-card-messages" id="demo-card-messages"></div>
+        <footer class="demo-card-followup">
+          <input id="demo-followup-input" type="text" placeholder="Ask a follow-up…" autocomplete="off" spellcheck="false" disabled />
+        </footer>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer site-footer--minimal">
+    <p><a href="download.html">Download idk for Windows</a></p>
+  </footer>
+
+  <div id="demo-tutorial" class="demo-tutorial is-hidden" aria-live="polite">
+    <p id="demo-tutorial-msg" class="demo-tutorial__msg"></p>
+  </div>
+
+  <script src="js/demo.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "updates": [
+    {
+      "version": "0.1.0",
+      "date": "2026-11-02",
+      "title": "A license for this computer",
+      "sections": [
+        {
+          "heading": "Setup",
+          "added": [
+            "idk installs from a Windows setup file and shows the license before setup finishes.",
+            "A license is $5.99 once for this computer. Copying the app or the license file does not unlock another computer."
+          ]
+        },
+        {
+          "heading": "Dashboard",
+          "added": [
+            "Settings can buy a license for this computer and shows when this computer is already paid."
+          ]
+        },
+        {
+          "heading": "Chat",
+          "added": [
+            "Asking waits until this computer is licensed."
+          ]
+        }
+      ]
+    }
+  ]
+}

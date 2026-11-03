@@ -1,0 +1,25 @@
+---
+description: Record every idk change in the brain log for commit and release notes
+alwaysApply: true
+---
+
+# Brain log
+
+`brain/log.json` is the source for commit messages and release notes. The current version is `MyAppVersion` in `installer/idk.iss`. A commit, update, or release raises that version everywhere listed in the publish rule before it ships. This commit's notes belong to the new version, not the one that already shipped.
+
+Before you finish, audit the current version. Every change a person would notice, and every fix that belongs in a commit, gets one sentence. Put that sentence in exactly one list:
+
+- `added` for something new, changed, or removed on purpose
+- `fixes` for something that was broken and now works
+
+Check Overlay, Dashboard, Setup, and Chat. Use Site for the website. Add a heading only when none of those fit. A release or installer note goes under the heading it belongs to.
+
+```json
+{ "heading": "Overlay", "added": ["The pill shows the license state."], "fixes": ["The labels no longer sit on the rounded ends."] }
+```
+
+- If that version has no entry, add one with today's date as `YYYY-MM-DD` and a short title.
+- If it exists, append the sentence. Leave older notes as they are.
+- Do not log formatting, reverted work, or a change that is already written there.
+- One note is one change. Do not use a `notes` list.
+- Do not commit or publish only because the log changed.
